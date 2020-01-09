@@ -1,3 +1,14 @@
+"""
+NSDQS - NASDAQ Domain Adaptation Dataset
+
+Contens of this file:
+Preprocessing
+Feature representation
+Plotting and description of datasets
+
+authors:  Christoph Raab
+"""
+
 import twint
 import datetime
 from textblob import TextBlob

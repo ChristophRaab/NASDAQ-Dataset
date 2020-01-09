@@ -1,3 +1,13 @@
+"""
+NSDQS - NASDAQ Stream Dataset
+
+Contens of this file:
+Fetch from twitter
+Create sentiment label
+
+authors:  Christoph Raab
+"""
+
 import twint
 import datetime
 from textblob import TextBlob

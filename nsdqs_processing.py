@@ -3,7 +3,7 @@ NSDQS - NASDAQ Stream Dataset
 
 Contens of this file:
 Preprocessing
-Feature Representation
+Feature representation
 Plotting and description of datasets
 
 authors:  Christoph Raab
@@ -175,7 +175,7 @@ def main_preprocessing():
     create_representation(cleaned_tweets,y)
 
     # Plot eigenspectrum of embeddings
-    X = np.load("data/nq_skipgram_embedding.npy")
+    X = np.load("data/nsdqs_skipgram_embedding.npy")
     plot_eigenspectrum(X)
 
     # Plot representation of 2 dimensional tsne embedding
