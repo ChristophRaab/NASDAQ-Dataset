@@ -23,14 +23,13 @@ There are number of tweets with 1000 data dimensions.
 * High number of classes with large imbalances compared to existing dataset
 
 ### Usage
-* Download data from: 
-* Copy it to data/ 
-* (Optional) Preprocess on your on:
-  Raw tweets are at `Tweets.csv`
-  Run `nsdqs_processing.py`
-  This creates a basic statistical dataset description, 
-  trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
-- Obtain dataset ready for usage in `data/nsdqs_skipgram_embedding.npy`.
+1. Download data from: 
+2. Copy it to data/ 
+3. (Optional) Preprocess on your on:
+* Raw tweets are at `Tweets.csv`
+* Run `nsdqs_processing.py`
+* This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
+4. Obtain dataset ready for usage in `data/nsdqs_skipgram_embedding.npy`.
   
 * Demo 
 Run `nsqds_demo.py` for a stream machine learning demonstration using SamKNN and RSVLQ. 
@@ -50,14 +49,13 @@ There are tweets encoded with 200 data dimensions
 * Domain adaptation problem implicity by using tweets from varying hashtags.
 
 ### Usage
-* Download data from: 
-* Copy it to data/ 
-* (Optional) Preprocess on your on:
-- Raw tweets are at `Tweets.csv`
-- Run `sentqs_processing.py`
-- This creates a basic statistical dataset description, 
-  trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
-- Obtain dataset ready for usage in `data/sentqs_skipgram_embedding.npy` for usage.
+1. Download data from: 
+2. Copy it to data/ 
+3. (Optional) Preprocess on your on:
+* Raw tweets are at `Tweets.csv`
+* Run `sentqs_processing.py`
+* This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
+* Obtain dataset ready for usage in `data/sentqs_skipgram_embedding.npy` for usage.
   
 * Demo 
   Run `sentqs_demo.py` for a stream machine learning demonstration using SamKNN and RSVLQ. 
