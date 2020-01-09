@@ -26,9 +26,9 @@ There are number of tweets with 1000 data dimensions.
 1. Download data from: 
 2. Copy it to data/ 
 3. (Optional) Preprocess on your on:
-- Raw tweets are at `Tweets.csv`
-- Run `nsdqs_processing.py`
-- This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
+  - Raw tweets are at `Tweets.csv`
+  - Run `nsdqs_processing.py`
+  - This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
 4. Obtain dataset ready for usage in `data/nsdqs_skipgram_embedding.npy`.
   
 * Demo 
@@ -52,9 +52,9 @@ There are tweets encoded with 200 data dimensions
 1. Download data from: 
 2. Copy it to data/ 
 3. (Optional) Preprocess on your on:
-- Raw tweets are at `Tweets.csv`
-- Run `sentqs_processing.py`
-- This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
+  - Raw tweets are at `Tweets.csv`
+  - Run `sentqs_processing.py`
+  - This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
 4. Obtain dataset ready for usage in `data/sentqs_skipgram_embedding.npy` for usage.
   
 * Demo 
