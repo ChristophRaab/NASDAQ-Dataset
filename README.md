@@ -18,7 +18,7 @@ This repository offers two datasets.
 * Number of classes: 15
 
 ### Scenario
-Test-Then-Train
+Test-Then-Train <\br>
 A primary challenge in the analysis and monitored classification of data streams in real-time is the changing underlying concept. This is called concept drift. This forces the machine learning algorithms to adapt constantly. This data set consists of tweets of the NASDAQ codes of the largest American companies and reflects the volatility of the stock market. Due to this volatility, many different concept drifts exist and pose a new challenge in the stream context, as there is no underlying systematic that explains or makes the drift predictable. The data set is highly unbalanced and very high-dimensional compared to other stream data sets. 
 
 ### Challanges
