@@ -33,7 +33,7 @@ A primary challenge in the analysis and monitored classification of data streams
     1. Raw tweets are at `Tweets.csv`
     2. Run `nsdqs_processing.py`
     3. This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
-4. Obtain dataset ready for usage in `data/nsdqs_skipgram_embedding.npy`.
+4. Obtain dataset ready for usage in `data/nsdqs_stream_skipgram.npy`.
   
 * Demo 
 Run `nsqds_demo.py` for a stream machine learning demonstration using SamKNN and RSVLQ. 
@@ -65,7 +65,7 @@ The core idea is to learn a sentiment analysis for positive, neutral and negativ
     1. Raw tweets are at `Tweets.csv`
     2. Run `sentqs_processing.py`
     3. This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
-4. Obtain dataset ready for usage in `data/sentqs_skipgram_embedding.npy` for usage.
+4. Obtain dataset ready for usage in `data/sentqs_da_skigram.npy` for usage.
   
 * Demo 
 Run `sentqs_demo.py` for a stream machine learning demonstration using SamKNN and RSVLQ. 
