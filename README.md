@@ -24,7 +24,7 @@ A primary challenge in the analysis and monitored classification of data streams
 ### Challanges
 * High feature dimension compared compared to existing dataset.
 * High number of classes with large imbalances compared to existing dataset.
-* High volatile dataset with many non-specified datasets.
+* High volatile dataset with many non-specified concept drifts.
 
 ### Usage
 1. Download data from: 
