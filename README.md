@@ -47,7 +47,7 @@ Run `nsqds_demo.py` for a stream machine learning demonstration using SamKNN and
 
 ### Scenario
 __Train on Sentiment Tweets - Evaluate Sentiment of Coperate Tweets__<br/>
-__Change of Language Area__<br/>
+__Change of Language Distribution between Train and Test dataset__<br/>
 If the scenario of different distributions between the training and the test data set is encountered, it is called a Domain Adaptation Problem. In contrast to other Domain Adaptation Data Sets, which are mostly image data sets or which are not subject to a real scenario, this data set offers a transfer learning scenario in the context of Social Media Analysis. 
 The core idea is to learn a sentiment analysis for positive, neutral and negative tweets. Moreover, to apply this through domain adaptation to corporate tweets. The practical advantage is that there is no need for manual labeling of the company tweets and they cover a large language spectrum. 
 
@@ -62,9 +62,9 @@ The core idea is to learn a sentiment analysis for positive, neutral and negativ
 1. Download data from: 
 2. Copy it to data/ 
 3. (Optional) Preprocess on your on:
-  - Raw tweets are at `Tweets.csv`
-  - Run `sentqs_processing.py`
-  - This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
+  1. Raw tweets are at `Tweets.csv`
+  2. Run `sentqs_processing.py`
+  3. This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
 4. Obtain dataset ready for usage in `data/sentqs_skipgram_embedding.npy` for usage.
   
 * Demo 
