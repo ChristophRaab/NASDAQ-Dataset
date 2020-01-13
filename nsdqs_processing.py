@@ -163,26 +163,26 @@ def main_preprocessing():
                 'TSLA', 'XEL']
 
     # Loading and preprocessing of tweets
-    df = pd.read_csv("Tweets.csv")
-    labels,tweets = seperate_tweets(df.iloc[:, 1],hashtags)
-    cleaned_tweets = cleanup.clean_text(tweets)
-    y = preprocessing.LabelEncoder().fit_transform(labels)
-
-    # Get some statistics of the dataset
-    describe_dataset(cleaned_tweets,labels)
-
-    # Create feature representation: TFIDF Variants and skipgram embedding with 1000 dimension and negative sampling
-    create_representation(cleaned_tweets,y)
+    # df = pd.read_csv("Tweets.csv")
+    # labels,tweets = seperate_tweets(df.iloc[:, 1],hashtags)
+    # cleaned_tweets = cleanup.clean_text(tweets)
+    # y = preprocessing.LabelEncoder().fit_transform(labels)
+    #
+    # # Get some statistics of the dataset
+    # describe_dataset(cleaned_tweets,labels)
+    #
+    # # Create feature representation: TFIDF Variants and skipgram embedding with 1000 dimension and negative sampling
+    # create_representation(cleaned_tweets,y)
 
     # Plot eigenspectrum of embeddings
     X = np.load("data/nsdqs_skipgram_embedding.npy")
     plot_eigenspectrum(X)
 
     # Plot representation of 2 dimensional tsne embedding
-    plot_tsne(X,labels)
-
-    # Try run some simple models
-    run_classification(X,y)
+    # plot_tsne(X,labels)
+    #
+    # # Try run some simple models
+    # run_classification(X,y)
 
 if __name__ == '__main__':
 

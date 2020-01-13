@@ -1,0 +1,7 @@
+# NSDQS - NASDAQ Stream Dataset
+
+Data directory of the repository. Except the original Twitter Feeds, every file will be saved her for later use.
+Including feature representation and plots
+
+authors:  Christoph Raab
+"""

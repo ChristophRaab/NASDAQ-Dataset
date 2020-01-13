@@ -129,4 +129,5 @@ dmypy.json
 .pyre/
 
 data/*
+!data/README
 log/*

@@ -24,6 +24,16 @@ from sklearn.preprocessing import MultiLabelBinarizer
 import matplotlib.pyplot as plt
 from keras.preprocessing.sequence import make_sampling_table
 
+def run_classification():
+    data = np.load('data/sentqs_dataset.npz')
+    Xs = data["arr_0"]
+    Ys = data["arr_1"]
+    Xt = data["arr_2"]
+    Yt = data["arr_3"]
+    print("Classificaiton Task Test \n")
+    from sklearn.ensemble import GradientBoostingClassifier
+    clf = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0, max_depth=1, random_state=0).fit(Xs, Ys)
+    print(clf.score(Xt, Yt))
 
 def create_tfidf(sen,min_df=10,max_df=100):
     print("Create TF-IDF\n")
@@ -36,7 +46,7 @@ def save_dataset(X, y, prefix =""):
     y = np.array(y)[:, None]
     dataset = np.concatenate([y,X], axis=1)
 
-    np.save("data/sentqs_stream_"+str(prefix)+".npy",dataset)
+    np.save("data/sentqs_da_"+str(prefix)+".npy",dataset)
     return dataset
 
 def seperate_tweets(data,hashtags):
@@ -50,6 +60,8 @@ def seperate_tweets(data,hashtags):
             if h in t:
                 labels.append(h)
                 tweets.append(t.replace(h," "))
+                break
+
     return labels,tweets
 
 def generate_data(corpus, window_size, V):
@@ -61,7 +73,7 @@ def generate_data(corpus, window_size, V):
             y = np_utils.to_categorical(y, V)
             yield X, y
 
-def create_embedding(text,dim=1000,batch_size=256,window_size=5,epochs = 100):
+def create_embedding(text,dim=300,batch_size=256,window_size=5,epochs = 100):
     text = [''.join(x) for x in text]
     t = Tokenizer()
     t.fit_on_texts(text)
@@ -89,11 +101,11 @@ def tsne_embedding(X):
         tsne = TSNE(n_components=2, init='random',
              random_state=0, perplexity=p)
         xl = tsne.fit_transform(X)
-        np.save("data/sentqs_tsne"+str(p)+".npy",xl)
+        np.save("data/sentqs_tsne_"+str(p)+".npy",xl)
         print("Finished TSNE\n")
 
 def create_representation(cleaned_tweets, y):
-    X,weights = create_embedding(cleaned_tweets,dim=1000)
+    X,weights = create_embedding(cleaned_tweets,dim=300)
     save_dataset(X, y, prefix="skipgram")
     X = create_tfidf(cleaned_tweets)
     save_dataset(X, y, prefix="tfidf_small")
@@ -136,7 +148,7 @@ def plot_tsne(X:None,labels):
 
     y = preprocessing.LabelEncoder().fit_transform(labels)
     for p in [5, 25, 50, 75, 100]:
-        d = np.load("data/sentqs_tsne" + str(p) + ".npy")
+        d = np.load("data/sentqs_tsne_" + str(p) + ".npy")
         for idx, l in enumerate(list(set(labels))):
             c = np.where(y == idx)[0]
             x = d[c, :]
@@ -148,13 +160,19 @@ def plot_tsne(X:None,labels):
         plt.savefig('data/sentqs_tsne_plot_' + str(p) + ".pdf", dpi=1000, transparent=True)
         plt.show()
 
-    for p in [5, 25, 50, 75, 100]:
-        d = np.load("data/sentqs_tsne_" + str(p) + ".npy")
-        plt.scatter(d[:, 0], d[:, 1], s=1, c=y, cmap='viridis')
-        plt.show()
-
-def create_domain_adaptation_problem(X,labels):
+def create_domain_adaptation_problem(X,labels,sentiment):
+    # hastags positive bad sad source und rest target
+    labels = np.array([s if "#bad" not in s else "#sad" for s in labels])
     y = preprocessing.LabelEncoder().fit_transform(labels)
+    source = np.where(np.logical_or(labels == "#bad", labels == "#sad",labels == "#positive"))[0]
+    target = np.where(np.logical_not(labels == "#sad", labels == "#positive"))[0]
+    Xs = X[source]
+    Xt = X[target]
+    Ys = sentiment[source]
+    Yt = sentiment[target]
+    data = [Xs,Ys,Xt,Yt]
+    np.savez('data/sentqs_dataset.npz', *data)
+    return  Xs,Ys,Xt,Yt
 
 
 
@@ -164,25 +182,28 @@ def main_preprocessing():
 
     # Loading and preprocessing of tweets
     df = pd.read_csv("Tweets.csv")
+    sentiment = pd.to_numeric(df.iloc[:, -1], errors='coerce')
     labels,tweets = seperate_tweets(df.iloc[:, 1],hashtags)
     cleaned_tweets = cleanup.clean_text(tweets)
     y = preprocessing.LabelEncoder().fit_transform(labels)
-
-    # Get some statistics of the dataset
-    describe_dataset(cleaned_tweets,labels)
-
-    # Create feature representation: TFIDF Variants and skipgram embedding with 1000 dimension and negative sampling
+    #
+    # # Get some statistics of the dataset
+    # describe_dataset(cleaned_tweets,labels)
+    #
+    # # Create feature representation: TFIDF Variants and skipgram embedding with 1000 dimension and negative sampling
     create_representation(cleaned_tweets,y)
-
-    # Plot eigenspectrum of embeddings
+    #
+    # # Plot eigenspectrum of embeddings
+    # X = np.load("data/sentqs_skipgram_embedding.npy")
+    # plot_eigenspectrum(X)
+    #
+    # # Plot representation of 2 dimensional tsne embedding
+    # plot_tsne(X,labels)
+    #
     X = np.load("data/sentqs_skipgram_embedding.npy")
-    plot_eigenspectrum(X)
+    create_domain_adaptation_problem(X,labels,sentiment)
 
-    # Plot representation of 2 dimensional tsne embedding
-    plot_tsne(X,labels)
-
-    create_domain_adaptation_problem(X,labels)
-
+    run_classification()
 if __name__ == '__main__':
 
     # Obtain the all files of the dataset preprocessing, including plots, feature representation etc.
