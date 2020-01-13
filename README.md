@@ -62,9 +62,9 @@ The core idea is to learn a sentiment analysis for positive, neutral and negativ
 1. Download data from: 
 2. Copy it to data/ 
 3. (Optional) Preprocess on your on:
-  1. Raw tweets are at `Tweets.csv`
-  2. Run `sentqs_processing.py`
-  3. This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
+    1. Raw tweets are at `Tweets.csv`
+    2. Run `sentqs_processing.py`
+    3. This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
 4. Obtain dataset ready for usage in `data/sentqs_skipgram_embedding.npy` for usage.
   
 * Demo 
