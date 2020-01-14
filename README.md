@@ -61,7 +61,7 @@ The core idea is to learn a sentiment analysis for positive, neutral and negativ
     1. Raw tweets are at `Tweets.csv`
     2. Run `sentqs_processing.py`
     3. This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
-* Store dataset ready for usage in `data/sentqs_da_skigram.npy` for usage.
+* Store dataset ready for usage in `data/sentqs_da_skigram.npy`.
   
 * Demo 
 Run `sentqs_demo.py` for a stream machine learning demonstration using SamKNN and RSVLQ. 
