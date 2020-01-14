@@ -8,6 +8,7 @@ Plotting and description of datasets
 
 authors:  Christoph Raab
 """
+import scipy.io as sio
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing
@@ -30,7 +31,7 @@ def run_classification():
     Ys = data["arr_1"]
     Xt = data["arr_2"]
     Yt = data["arr_3"]
-    print("Classificaiton Task Test \n")
+    print("Classification Task Test \n")
     from sklearn.ensemble import GradientBoostingClassifier
     clf = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0, max_depth=1, random_state=0).fit(Xs, Ys)
     print(clf.score(Xt, Yt))
@@ -160,7 +161,7 @@ def plot_tsne(X:None,labels):
         plt.savefig('data/sentqs_tsne_plot_' + str(p) + ".pdf", dpi=1000, transparent=True)
         plt.show()
 
-def create_domain_adaptation_problem(X,labels,sentiment):
+def create_domain_adaptation_problem(X,tweets,labels,sentiment):
     # hastags positive bad sad source und rest target
     labels = np.array([s if "#bad" not in s else "#sad" for s in labels])
     y = preprocessing.LabelEncoder().fit_transform(labels)
@@ -172,6 +173,12 @@ def create_domain_adaptation_problem(X,labels,sentiment):
     Yt = sentiment[target]
     data = [Xs,Ys,Xt,Yt]
     np.savez('data/sentqs_dataset.npz', *data)
+    sio.savemat('data/sentqs_dataset.mat', {'Xs': Xs, 'Xt': Xt, 'Ys': Ys, 'Yt': Yt})
+    source_tweets = [tweets[i] for i in source]
+    target_tweets = [tweets[i] for i in target]
+
+    pd.DataFrame(source_tweets).to_csv("data/nsdq_source_tweets.csv")
+    pd.DataFrame(target_tweets).to_csv("data/nsdq_target_tweets.csv")
     return  Xs,Ys,Xt,Yt
 
 
@@ -182,7 +189,7 @@ def main_preprocessing():
 
     # Loading and preprocessing of tweets
     df = pd.read_csv("Tweets.csv")
-    sentiment = pd.to_numeric(df.iloc[:, -1], errors='coerce')
+    sentiment = pd.to_numeric(df.iloc[:, -1], errors="raise", downcast="float")
     labels,tweets = seperate_tweets(df.iloc[:, 1],hashtags)
     cleaned_tweets = cleanup.clean_text(tweets)
     y = preprocessing.LabelEncoder().fit_transform(labels)
@@ -191,7 +198,7 @@ def main_preprocessing():
     # describe_dataset(cleaned_tweets,labels)
     #
     # # Create feature representation: TFIDF Variants and skipgram embedding with 1000 dimension and negative sampling
-    create_representation(cleaned_tweets,y)
+    # create_representation(cleaned_tweets,y)
     #
     # # Plot eigenspectrum of embeddings
     # X = np.load("data/sentqs_skipgram_embedding.npy")
@@ -201,9 +208,11 @@ def main_preprocessing():
     # plot_tsne(X,labels)
     #
     X = np.load("data/sentqs_skipgram_embedding.npy")
-    create_domain_adaptation_problem(X,labels,sentiment)
+    create_domain_adaptation_problem(X,tweets,labels,sentiment)
 
     run_classification()
+
+
 if __name__ == '__main__':
 
     # Obtain the all files of the dataset preprocessing, including plots, feature representation etc.
