@@ -10,8 +10,9 @@ authors:  Christoph Raab
 import requests
 import sys
 import numpy as np
+from NBT import NBT
 from sklearn.ensemble import GradientBoostingClassifier
-
+from sklearn import preprocessing
 link = "https://cloud.fhws.de/index.php/s/M4rkbHj9FfW6YKo/download"
 file_name = "data/sentqs_dataset.npz"
 
@@ -40,7 +41,7 @@ def download_data():
     Yt = data["arr_3"]
     return Xs,Ys,Xt,Yt
 
-Xs,Ys,Xt,Yt = download_data()
+# Xs,Ys,Xt,Yt = download_data()
 #If dataset file is already downloaded
 data = np.load(file_name,allow_pickle=True)
 Xs = data["arr_0"]
@@ -48,6 +49,14 @@ Ys = data["arr_1"]
 Xt = data["arr_2"]
 Yt = data["arr_3"]
 
-print("\n Classification Task Test \n")
-clf = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0, max_depth=1, random_state=0).fit(Xs, Ys)
+# print("\n Classification Task Test \n")
+# clf = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0, max_depth=1, random_state=0).fit(Xs, Ys)
+# print(clf.score(Xt, Yt))
+
+nbt = NBT(landmarks=60000)
+# Data augmentation is necessary if Z and X have different shapes.
+Ys, Xs = nbt.data_augmentation(Xs, Xt.shape[0], Ys)
+X, Xs = nbt.nys_basis_transfer(Xt, Xs, Ys.flatten())
+clf = GradientBoostingClassifier()
+clf.fit(Xs, Ys)
 print(clf.score(Xt, Yt))
