@@ -27,13 +27,11 @@ A primary challenge in the analysis and monitored classification of data streams
 * High volatile dataset with many non-specified concept drifts.
 
 ### Usage
-1. Download data from: 
-2. Copy it to data/ 
-3. (Optional) Preprocess on your on:
+* (Optional) Preprocess on your on:
     1. Raw tweets are at `Tweets.csv`
     2. Run `nsdqs_processing.py`
     3. This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
-4. Obtain dataset ready for usage in `data/nsdqs_stream_skipgram.npy`.
+* Store dataset ready for usage in `data/nsdqs_stream_skipgram.npy`.
   
 * Demo 
 Run `nsqds_demo.py` for a stream machine learning demonstration using SamKNN and RSVLQ. 
@@ -59,13 +57,11 @@ The core idea is to learn a sentiment analysis for positive, neutral and negativ
 * Domain adaptation problem implicity by using tweets from varying hashtags.
 
 ### Usage
-1. Download data from: 
-2. Copy it to data/ 
-3. (Optional) Preprocess on your on:
+* (Optional) Preprocess on your on:
     1. Raw tweets are at `Tweets.csv`
     2. Run `sentqs_processing.py`
     3. This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
-4. Obtain dataset ready for usage in `data/sentqs_da_skigram.npy` for usage.
+* Store dataset ready for usage in `data/sentqs_da_skigram.npy`.
   
 * Demo 
 Run `sentqs_demo.py` for a stream machine learning demonstration using SamKNN and RSVLQ. 
