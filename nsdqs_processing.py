@@ -130,14 +130,14 @@ def plot_eigenspectrum(x):
     plt.bar(range(101), values[:101], align='center')
     plt.ylabel("Eigenvalue")
     # plt.tight_layout()
-    plt.xlabel("No.")
+    plt.xlabel("Index")
     plt.xticks([0, 20, 40, 60, 80, 100], [1, 20, 40, 60, 80, 100])
     plt.savefig("data/nsdqs_spectra.pdf", transparent=True)
     plt.show()
 
 
 def plot_tsne(X:None,labels):
-    tsne_embedding(X)
+    # tsne_embedding(X)
 
     y = preprocessing.LabelEncoder().fit_transform(labels)
     for p in [5, 25, 50, 75, 100]:
@@ -147,24 +147,24 @@ def plot_tsne(X:None,labels):
             x = d[c, :]
             plt.scatter(x[:, 0], x[:, 1], s=.5, label=l)
             plt.legend(markerscale=10., bbox_to_anchor=(1, 1.02))
-        plt.ylabel("$x_1$")
-        plt.xlabel("$x_2$")
+        plt.ylabel("t-SNE embedding dimension 1")
+        plt.xlabel("t-SNE embedding dimension 2")
         plt.tight_layout()
-        plt.savefig('data/nsdqs_tsne_plot_' + str(p) + ".pdf", dpi=1000, transparent=True)
+        plt.savefig('data/nsdqs_tsne_plot_' + str(p) + ".pdf", dpi=300, transparent=True)
         plt.show()
 
-    for p in [5, 25, 50, 75, 100]:
-        d = np.load("data/nsdqs_tsne_" + str(p) + ".npy")
-        plt.scatter(d[:, 0], d[:, 1], s=1, c=y, cmap='viridis')
-        plt.show()
+    # for p in [5, 25, 50, 75, 100]:
+    #     d = np.load("data/nsdqs_tsne_" + str(p) + ".npy")
+    #     plt.scatter(d[:, 0], d[:, 1], s=1, c=y, cmap='viridis')
+    #     plt.show()
 
 def main_preprocessing():
     hashtags = ['ADBE', 'GOOGL', 'AMZN', 'AAPL', 'ADSK', 'BKNG', 'EXPE', 'INTC', 'MSFT', 'NFLX', 'NVDA', 'PYPL', 'SBUX',
                 'TSLA', 'XEL']
 
     # Loading and preprocessing of tweets
-    # df = pd.read_csv("Tweets.csv")
-    # labels,tweets = seperate_tweets(df.iloc[:, 1],hashtags)
+    df = pd.read_csv("Tweets.csv")
+    labels,tweets = seperate_tweets(df.iloc[:, 1],hashtags)
     # cleaned_tweets = cleanup.clean_text(tweets)
     # y = preprocessing.LabelEncoder().fit_transform(labels)
     #
@@ -179,7 +179,7 @@ def main_preprocessing():
     plot_eigenspectrum(X)
 
     # Plot representation of 2 dimensional tsne embedding
-    # plot_tsne(X,labels)
+    plot_tsne(X,labels)
     #
     # # Try run some simple models
     # run_classification(X,y)
