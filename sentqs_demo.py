@@ -6,14 +6,14 @@ Domain Adaptation Demo
 authors:  Christoph Raab
 """
 
-
-from keras.preprocessing import sequence
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation
-from keras.layers import Embedding
-from keras.layers import LSTM
-from keras.layers import Conv1D, MaxPooling1D,Conv2D
-from keras.datasets import imdb
+# Error: default_graph when using only keras and not tensorflow.keras
+from tensorflow.keras.preprocessing import sequence
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, Activation
+from tensorflow.keras.layers import Embedding
+from tensorflow.keras.layers import LSTM
+from tensorflow.keras.layers import Conv1D, MaxPooling1D,Conv2D
+from tensorflow.keras.datasets import imdb
 import requests
 import sys
 import numpy as np
@@ -48,7 +48,7 @@ def download_data():
     Yt = data["arr_3"]
     return Xs,Ys,Xt,Yt
 
-# Xs,Ys,Xt,Yt = download_data()
+#Xs,Ys,Xt,Yt = download_data()
 
 #If dataset file is already downloaded
 data = np.load(file_name,allow_pickle=True)
@@ -93,6 +93,6 @@ model.fit(Xs, Ys,
           batch_size=batch_size,
           epochs=epochs,
           validation_data=(Xt, Yt))
-score, acc = model.evaluate(Xt, Xt, batch_size=batch_size)
+score, acc = model.evaluate(Xt, Yt, batch_size=batch_size)
 print('Test score:', score)
 print('Test accuracy:', acc)
