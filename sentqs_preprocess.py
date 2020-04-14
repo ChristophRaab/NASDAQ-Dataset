@@ -24,6 +24,8 @@ from keras_preprocessing.text import Tokenizer
 from sklearn.preprocessing import MultiLabelBinarizer
 import matplotlib.pyplot as plt
 from keras.preprocessing.sequence import make_sampling_table
+from glove import *
+from scipy import spatial
 
 def run_classification():
     data = np.load('data/sentqs_dataset.npz')
@@ -79,6 +81,7 @@ def create_embedding(text,dim=300,batch_size=256,window_size=5,epochs = 100):
     t = Tokenizer()
     t.fit_on_texts(text)
     corpus = t.texts_to_sequences(text)
+    print(corpus)
     V = len(t.word_index)
     step_size = len(corpus) // batch_size
     model = Sequential()
@@ -96,6 +99,37 @@ def create_embedding(text,dim=300,batch_size=256,window_size=5,epochs = 100):
     np.save("data/sentqs_skipgram_embedding.npy", emb)
     return emb, model.get_weights()[0]
 
+def create_glove_embedding(corpus,dim=300,batch_size=256,window_size=5,epochs = 100):
+    # https://pypi.org/project/glove-py/
+    # Print first entries of text/corpus = first 10 tweets
+    print(corpus[0:10])
+
+    # Build Vocab from Corpus and show the first 10 words
+    vocab = build_vocab(corpus)
+    for x in list(vocab)[0:10]:
+        print("key: {}, id: {}, frequency: {} ".format(x, vocab[x][0], vocab[x][1]))
+    print(len(list(vocab)))
+
+    # Build co-occurrence matrix from the vocab and corpus
+    cooccur = build_cooccur(vocab, corpus, window_size)
+
+    # Example of the first 10 word combinations with their co-occurrence value
+    for n in range(10):
+        occur_example = next(cooccur)
+        print("main word: {}, context word: {}, co-occurrence value: {} ".format([word for (word, idfrq) in vocab.items() if idfrq[0] == occur_example[0]], [word for (word, idfrq) in vocab.items() if idfrq[0] == occur_example[1]], occur_example[2]))
+
+    # Train the glove embedding, returns the computed word vector matrix weights
+    weights = train_glove(vocab, cooccur, vector_size=dim, iterations=1)
+    print(np.array(weights).shape)
+    print(weights[0])
+
+    #mlb = MultiLabelBinarizer()
+    #enc = mlb.fit_transform(corpus)
+    #emb = enc @ weights
+    #np.save("data/sentqs_glove_embedding.npy", emb)
+    np.save("data/sentqs_glove_weights.np", weights)
+    return weights #emb, weights
+
 def tsne_embedding(X):
     print("Starting TSNE\n")
     for p in [5,25,50,75,100]:
@@ -106,12 +140,14 @@ def tsne_embedding(X):
         print("Finished TSNE\n")
 
 def create_representation(cleaned_tweets, y):
-    X,weights = create_embedding(cleaned_tweets,dim=300)
-    save_dataset(X, y, prefix="skipgram")
-    X = create_tfidf(cleaned_tweets)
-    save_dataset(X, y, prefix="tfidf_small")
-    X = create_tfidf(cleaned_tweets,min_df=1,max_df=1)
-    save_dataset(X, y,prefix="tfidf_default")
+    #X,weights = create_embedding(cleaned_tweets,dim=300)
+    #save_dataset(X, y, prefix="skipgram")
+    X,weights = create_glove_embedding(cleaned_tweets,dim=300,epochs=5)
+    save_dataset(X, y, prefix="glove")
+    #X = create_tfidf(cleaned_tweets)
+    #save_dataset(X, y, prefix="tfidf_small")
+    #X = create_tfidf(cleaned_tweets,min_df=1,max_df=1)
+    #save_dataset(X, y,prefix="tfidf_default")
 
 
 def describe_dataset(tweets,labels):
@@ -192,13 +228,14 @@ def main_preprocessing():
     sentiment = pd.to_numeric(df.iloc[:, -1], errors="raise", downcast="float")
     labels,tweets = seperate_tweets(df.iloc[:, 1],hashtags)
     cleaned_tweets = cleanup.clean_text(tweets)
+
     y = preprocessing.LabelEncoder().fit_transform(labels)
     #
     # # Get some statistics of the dataset
     # describe_dataset(cleaned_tweets,labels)
     #
     # # Create feature representation: TFIDF Variants and skipgram embedding with 1000 dimension and negative sampling
-    # create_representation(cleaned_tweets,y)
+    create_representation(cleaned_tweets,y)
     #
     # # Plot eigenspectrum of embeddings
     # X = np.load("data/sentqs_skipgram_embedding.npy")
@@ -207,10 +244,10 @@ def main_preprocessing():
     # # Plot representation of 2 dimensional tsne embedding
     # plot_tsne(X,labels)
     #
-    X = np.load("data/sentqs_skipgram_embedding.npy")
-    create_domain_adaptation_problem(X,tweets,labels,sentiment)
+    #X = np.load("data/sentqs_skipgram_embedding.npy")
+    #create_domain_adaptation_problem(X,tweets,labels,sentiment)
 
-    run_classification()
+    #run_classification()
 
 
 if __name__ == '__main__':

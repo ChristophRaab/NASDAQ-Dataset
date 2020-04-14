@@ -48,7 +48,7 @@ def download_data():
     Yt = data["arr_3"]
     return Xs,Ys,Xt,Yt
 
-# Xs,Ys,Xt,Yt = download_data()
+#Xs,Ys,Xt,Yt = download_data()
 
 #If dataset file is already downloaded
 data = np.load(file_name,allow_pickle=True)
