@@ -122,7 +122,7 @@ def describe_dataset(tweets,labels):
     plt.xticks(range(len(keys)), keys, rotation=45)
     plt.xlabel("Hastags")
     plt.tight_layout()
-    plt.savefig("data/nsdqs_class_dist.pdf", dpi=1000, transparent=True)
+    plt.savefig("plots/nsdqs_class_dist.pdf", dpi=1000, transparent=True)
     plt.show()
 
 def plot_eigenspectrum(x):
@@ -132,7 +132,7 @@ def plot_eigenspectrum(x):
     # plt.tight_layout()
     plt.xlabel("Index")
     plt.xticks([0, 20, 40, 60, 80, 100], [1, 20, 40, 60, 80, 100])
-    plt.savefig("data/nsdqs_spectra.pdf", transparent=True)
+    plt.savefig("plots/nsdqs_spectra.pdf", transparent=True)
     plt.show()
 
 
@@ -150,13 +150,9 @@ def plot_tsne(X:None,labels):
         plt.ylabel("t-SNE embedding dimension 1")
         plt.xlabel("t-SNE embedding dimension 2")
         plt.tight_layout()
-        plt.savefig('data/nsdqs_tsne_plot_' + str(p) + ".pdf", dpi=300, transparent=True)
+        plt.savefig('plots/nsdqs_tsne_plot_' + str(p) + ".pdf", dpi=300, transparent=True)
         plt.show()
 
-    # for p in [5, 25, 50, 75, 100]:
-    #     d = np.load("data/nsdqs_tsne_" + str(p) + ".npy")
-    #     plt.scatter(d[:, 0], d[:, 1], s=1, c=y, cmap='viridis')
-    #     plt.show()
 
 def main_preprocessing():
     hashtags = ['ADBE', 'GOOGL', 'AMZN', 'AAPL', 'ADSK', 'BKNG', 'EXPE', 'INTC', 'MSFT', 'NFLX', 'NVDA', 'PYPL', 'SBUX',

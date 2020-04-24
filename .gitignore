@@ -131,3 +131,5 @@ dmypy.json
 data/*
 !data/README
 log/*
+.vscode/launch.json
+.vscode/settings.json

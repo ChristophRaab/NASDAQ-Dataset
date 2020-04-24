@@ -212,8 +212,8 @@ def generate_data(corpus, window_size, V):
 #     return emb, model.get_weights()[0]
 
 def get_glove_embedding_matrix(word_index, dim):
-    if os.path.isfile("data/glove_embedding.npz"):
-        loaded_embedding = np.load("data/glove_embedding.npz")
+    if os.path.isfile("data/sentqs_glove_embedding.npz"):
+        loaded_embedding = np.load("data/sentqs_glove_embedding.npz")
         print('Loaded Glove embedding.')
         return loaded_embedding['embedding']
     else:
@@ -245,14 +245,14 @@ def get_glove_embedding_matrix(word_index, dim):
                 # words not found in embedding index will be all-zeros.
                 embedding_matrix[i] = embedding_vector
 
-        np.savez_compressed("data/glove_embedding", embedding=embedding_matrix)
+        np.savez_compressed("data/sentqs_glove_embedding.npz", embedding=embedding_matrix)
         return embedding_matrix
 
 def get_skipgram_embedding_matrix(text, dim=200, batch_size=256, window_size=5, epochs = 100):
-    if os.path.isfile("data/skipgram_embedding.npz"):
-        loaded_embedding = np.load("data/skipgram_embedding.npz")
+    if os.path.isfile("data/sentqs_da_skipgram.npy"):
+        loaded_embedding = np.load("data/sentqs_da_skipgram.npy")
         print('Loaded Skipgram embedding.')
-        return loaded_embedding['embedding']
+        return loaded_embedding[:,1:]
     else:
         text = [''.join(x) for x in text]
         t = Tokenizer()
@@ -273,7 +273,7 @@ def get_skipgram_embedding_matrix(text, dim=200, batch_size=256, window_size=5, 
         mlb = MultiLabelBinarizer()
         enc = mlb.fit_transform(corpus)
         emb = enc @ model.get_weights()[0]
-        np.savez_compressed("data/skipgram_embedding", embedding=emb)
+        np.savez_compressed("data/sentqs_skipgram_embedding.npy", embedding=emb)
         return emb
 
 def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True, dim = 200, val_split=0.2):
@@ -307,10 +307,14 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
     x_val = data[-num_validation_samples:]
     y_val = labels[-num_validation_samples:]
 
+    emb = get_skipgram_embedding_matrix(text, epochs=1)
+    emb = np.expand_dims(emb, 1)
+    emb_train = emb[:-num_validation_samples]
+    emb_val = emb[:-num_validation_samples]
     # Build model
     MAX_SEQUENCE_LENGTH = len(max(text, key=lambda i: len(i))) + 1
 
-    sequence_input = Input(shape=(MAX_SEQUENCE_LENGTH,), dtype='int32')
+    sequence_input = Input(shape=(MAX_SEQUENCE_LENGTH,), dtype='int32',name="embedding_input")
 
     glove_embedding_layer = Embedding(num_words,
                                 dim,
@@ -319,12 +323,8 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
                                 input_length=MAX_SEQUENCE_LENGTH,
                                 trainable=False)(sequence_input)
 
-    skipgram_embedding_layer = Embedding(num_words,
-                                dim,
-                                #embeddings_initializer=Constant(get_skipgram_embedding_matrix(text, epochs=1)),
-                                #weights=[get_skipgram_embedding_matrix(text, epochs=1)],
-                                input_length=MAX_SEQUENCE_LENGTH,
-                                trainable=False)(sequence_input)
+    skipgram_embedding = Input(shape=(1,dim,),name="skipgram_input")
+
 
     own_embedding_layer = Embedding(num_words,
                                 dim,
@@ -333,7 +333,7 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
                                 input_length=MAX_SEQUENCE_LENGTH,
                                 trainable=True)(sequence_input)
 
-    combined = concatenate([glove_embedding_layer, skipgram_embedding_layer, own_embedding_layer])
+    combined = concatenate([glove_embedding_layer, skipgram_embedding, own_embedding_layer],axis=1)
 
     x = Conv1D(128, 5, activation='relu')(combined)
     x = MaxPooling1D(5)(x)
@@ -344,19 +344,19 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
     x = Dense(128, activation='relu')(x)
     preds = Dense(18, activation='softmax')(x)
 
-    model = Model(sequence_input, preds)
+    model = Model(inputs=[sequence_input,skipgram_embedding], outputs=preds)
     model.compile(loss='categorical_crossentropy',
                   optimizer='rmsprop',
                   metrics=['acc'])
 
     model.summary()
-    plot_model(model, to_file='model_combined.png')
+    # plot_model(model, to_file='model_combined.png')
 
     # Train model
-    model.fit(x_train, y_train,
+    model.fit([x_train,emb_train], y_train,
               batch_size=batch_size,
               epochs=epochs,
-              validation_data=(x_val, y_val))
+              validation_data=([x_val,emb_val], y_val))
 
     if save:
         model.save("data/sentqs_full.h5")
@@ -399,7 +399,7 @@ def describe_dataset(tweets,labels):
     plt.xticks(range(len(keys)), keys, rotation=45)
     plt.xlabel("Hastags")
     plt.tight_layout()
-    plt.savefig("data/sentqs_class_dist.pdf", dpi=1000, transparent=True)
+    plt.savefig("plots/sentqs_class_dist.pdf", dpi=1000, transparent=True)
     plt.show()
 
 def plot_eigenspectrum(x):
@@ -409,7 +409,7 @@ def plot_eigenspectrum(x):
     # plt.tight_layout()
     plt.xlabel("No.")
     plt.xticks([0, 20, 40, 60, 80, 100], [1, 20, 40, 60, 80, 100])
-    plt.savefig("data/sentqs_spectra.pdf", transparent=True)
+    plt.savefig("plots/sentqs_spectra.pdf", transparent=True)
     plt.show()
 
 
@@ -427,7 +427,7 @@ def plot_tsne(X:None,labels):
         plt.ylabel("$x_1$")
         plt.xlabel("$x_2$")
         plt.tight_layout()
-        plt.savefig('data/sentqs_tsne_plot_' + str(p) + ".pdf", dpi=1000, transparent=True)
+        plt.savefig('plots/sentqs_tsne_plot_' + str(p) + ".pdf", dpi=1000, transparent=True)
         plt.show()
 
 def create_domain_adaptation_problem(X,tweets,labels,sentiment):
@@ -446,14 +446,14 @@ def create_domain_adaptation_problem(X,tweets,labels,sentiment):
     source_tweets = [tweets[i] for i in source]
     target_tweets = [tweets[i] for i in target]
 
-    pd.DataFrame(source_tweets).to_csv("data/nsdq_source_tweets.csv")
-    pd.DataFrame(target_tweets).to_csv("data/nsdq_target_tweets.csv")
+    pd.DataFrame(source_tweets).to_csv("data/sentqs_source_tweets.csv")
+    pd.DataFrame(target_tweets).to_csv("data/sentqs_target_tweets.csv")
     return  Xs,Ys,Xt,Yt
 
 def load_preprocessed_sentqs():
-    if os.path.isfile("data/preprocessed_sentqs.npz"):
-        loaded_data = np.load("data/preprocessed_sentqs.npz")
-        return loaded_data['cleaned_tweets'], loaded_data['y']
+    if os.path.isfile("data/sentqs_preprocessed.npz"):
+        loaded_data = np.load("data/sentqs_preprocessed.npz")
+        return loaded_data['cleaned_tweets'], loaded_data['y'],loaded_data['sentiment']
     else:
         hashtags = ['ADBE', 'GOOGL', 'AMZN', 'AAPL', 'ADSK', 'BKNG', 'EXPE', 'INTC', 'MSFT', 'NFLX', 'NVDA', 'PYPL', 'SBUX',
          'TSLA', 'XEL', 'positive', 'bad', 'sad']
@@ -465,19 +465,19 @@ def load_preprocessed_sentqs():
         cleaned_tweets = cleanup.clean_text(tweets)
 
         y = preprocessing.LabelEncoder().fit_transform(labels)
-        np.savez_compressed("data/preprocessed_sentqs", cleaned_tweets=cleaned_tweets, y=y)
-        return cleaned_tweets, y
+        np.savez_compressed("data/sentqs_preprocessed.npz", cleaned_tweets=cleaned_tweets, y=y,sentiment=sentiment)
+        return cleaned_tweets, y,sentiment
 
 def main_preprocessing():
 
-    cleaned_tweets, y = load_preprocessed_sentqs()
+    cleaned_tweets, y,sentiment= load_preprocessed_sentqs()
     #
     # # Get some statistics of the dataset
     # describe_dataset(cleaned_tweets,labels)
     #
     # # Create feature representation: TFIDF Variants and skipgram embedding with 1000 dimension and negative sampling
     #create_representation(cleaned_tweets,y)
-    model = generate_embedding_model(cleaned_tweets,y)
+    model = generate_embedding_model(cleaned_tweets,sentiment)
     #
     # # Plot eigenspectrum of embeddings
     # X = np.load("data/sentqs_skipgram_embedding.npy")
