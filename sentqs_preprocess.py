@@ -273,7 +273,7 @@ def get_skipgram_embedding_matrix(text, dim=200, batch_size=256, window_size=5, 
         mlb = MultiLabelBinarizer()
         enc = mlb.fit_transform(corpus)
         emb = enc @ model.get_weights()[0]
-        np.savez_compressed("data/sentqs_skipgram_embedding.npy", embedding=emb)
+        np.savez_compressed("data/sentqs_skipgram_embedding", embedding=emb)
         return emb
 
 def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True, dim = 200, val_split=0.2):
@@ -477,18 +477,19 @@ def main_preprocessing():
     #
     # # Create feature representation: TFIDF Variants and skipgram embedding with 1000 dimension and negative sampling
     get_skipgram_embedding_matrix(cleaned_tweets)
-    X = np.load("data/sentqs_skipgram_embedding.npy")
+    X = np.load("data/sentqs_skipgram_embedding.npz",allow_pickle)
+    X = X["embedding"]
     create_domain_adaptation_problem(X,tweets,hashtags,sentiment)
     # model = generate_embedding_model(cleaned_tweets,sentiment)
     # # Plot eigenspectrum of embeddings
-    # X = np.load("data/sentqs_skipgram_embedding.npy")
-    # plot_eigenspectrum(X)
+    X = np.load("data/sentqs_skipgram_embedding.npz")
+    plot_eigenspectrum(X)
     #
     # # Plot representation of 2 dimensional tsne embedding
     # plot_tsne(X,sentiment)
-    #
-    #X = np.load("data/sentqs_skipgram_embedding.npy")
-    #create_domain_adaptation_problem(X,tweets,sentiment,sentiment)
+    X = X["embedding"]
+    #X = np.load("data/sentqs_skipgram_embedding.npz")
+    create_domain_adaptation_problem(X,tweets,sentiment,sentiment)
 
     #run_classification()
 
