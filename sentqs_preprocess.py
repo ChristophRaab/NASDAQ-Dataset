@@ -34,7 +34,7 @@ from tensorflow.keras.layers import Dense, Input, GlobalMaxPooling1D
 from tensorflow.keras.layers import Conv1D, MaxPooling1D, Embedding, concatenate
 from tensorflow.keras.models import Model
 from tensorflow.keras.initializers import Constant
-#from keras.utils.vis_utils import plot_model
+# from keras.utils.vis_utils import plot_model
 from tensorflow.keras.utils import plot_model
 from scipy import spatial
 
@@ -314,7 +314,7 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
     emb = get_skipgram_embedding_matrix(text, epochs=1)
     emb = np.expand_dims(emb, 1)
     emb_train = emb[:-num_validation_samples]
-    emb_val = emb[:-num_validation_samples]
+    emb_val = emb[-num_validation_samples:]
     # Build model
     MAX_SEQUENCE_LENGTH = len(max(text, key=lambda i: len(i))) + 1
 
@@ -346,7 +346,7 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
     x = Conv1D(128, 5, activation='relu')(x)
     x = GlobalMaxPooling1D()(x)
     x = Dense(128, activation='relu')(x)
-    preds = Dense(18, activation='softmax')(x)
+    preds = Dense(3, activation='softmax')(x)
 
     model = Model(inputs=[sequence_input,skipgram_embedding], outputs=preds)
     model.compile(loss='categorical_crossentropy',
@@ -354,7 +354,7 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
                   metrics=['acc'])
 
     model.summary()
-    # plot_model(model, to_file='model_combined.png')
+    plot_model(model, to_file='model_combined.png')
 
     # Train model
     model.fit([x_train,emb_train], y_train,
