@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 sentqs - NASDAQ Domain Adaptation Dataset
 
@@ -62,20 +63,22 @@ def save_dataset(X, y, prefix =""):
     np.save("data/sentqs_da_"+str(prefix)+".npy",dataset)
     return dataset
 
-def seperate_tweets(data,hashtags):
+def seperate_tweets(data,hashtags,sentiment):
     print("Seperate Tweets \n")
     labels = []
     tweets = []
-    for t in data:
+    sentiment_new = []
+    for t,s in zip(data,sentiment):
         for h in hashtags:
             t = t.lower()
             h = "#" + h.lower()
             if h in t:
                 labels.append(h)
                 tweets.append(t.replace(h," "))
+                sentiment_new.append(s)
                 break
 
-    return labels,tweets
+    return labels,tweets,sentiment_new
 
 def generate_data(corpus, window_size, V):
     for words in corpus:
@@ -249,10 +252,11 @@ def get_glove_embedding_matrix(word_index, dim):
         return embedding_matrix
 
 def get_skipgram_embedding_matrix(text, dim=200, batch_size=256, window_size=5, epochs = 100):
-    if os.path.isfile("data/sentqs_skipgram.npy"):
-        loaded_embedding = np.load("data/sentqs_skipgram.npy")
+    if os.path.isfile("data/sentqs_skipgram_embedding.npz"):
+        loaded_embedding = np.load("data/sentqs_skipgram_embedding.npz")
+        loaded_embedding = loaded_embedding["embedding"]
         print('Loaded Skipgram embedding.')
-        return loaded_embedding[:,1:]
+        return loaded_embedding
     else:
         text = [''.join(x) for x in text]
         t = Tokenizer()
@@ -453,43 +457,49 @@ def create_domain_adaptation_problem(X,tweets,labels,sentiment):
 def load_preprocessed_sentqs():
     if os.path.isfile("data/sentqs_preprocessed.npz"):
         loaded_data = np.load("data/sentqs_preprocessed.npz")
-        return loaded_data['cleaned_tweets'], loaded_data['y'],loaded_data['sentiment']
+        return loaded_data['cleaned_tweets'],loaded_data['tweets'], loaded_data['y'],loaded_data['sentiment']
     else:
         hashtags = ['ADBE', 'GOOGL', 'AMZN', 'AAPL', 'ADSK', 'BKNG', 'EXPE', 'INTC', 'MSFT', 'NFLX', 'NVDA', 'PYPL', 'SBUX',
          'TSLA', 'XEL', 'positive', 'bad', 'sad']
-
+#𝚙𝚘𝚜𝚒𝚝𝚒𝚟𝚎
         # Loading and preprocessing of tweets
         df = pd.read_csv("Tweets.csv")
         sentiment = pd.to_numeric(df.iloc[:, -1], errors="raise", downcast="float")
-        labels,tweets = seperate_tweets(df.iloc[:, 1],hashtags)
+        labels,tweets,sentiment = seperate_tweets(df.iloc[:, 1],hashtags,sentiment)
         cleaned_tweets = cleanup.clean_text(tweets)
 
         y = preprocessing.LabelEncoder().fit_transform(labels)
-        np.savez_compressed("data/sentqs_preprocessed.npz", cleaned_tweets=cleaned_tweets, y=y,sentiment=sentiment)
-        return cleaned_tweets, y,sentiment
+        np.savez_compressed("data/sentqs_preprocessed.npz",tweets=tweets, cleaned_tweets=cleaned_tweets, y=y,sentiment=sentiment)
+        return cleaned_tweets,tweets, y,sentiment
 
 def main_preprocessing():
 
-    cleaned_tweets,hashtags,sentiment= load_preprocessed_sentqs()
-    #
+    cleaned_tweets,tweets,hashtags,sentiment= load_preprocessed_sentqs()
+    model = generate_embedding_model(cleaned_tweets,sentiment)
+
+
     # # Get some statistics of the dataset
     # describe_dataset(cleaned_tweets,labels)
-    #
+
+
+
     # # Create feature representation: TFIDF Variants and skipgram embedding with 1000 dimension and negative sampling
-    get_skipgram_embedding_matrix(cleaned_tweets)
-    X = np.load("data/sentqs_skipgram_embedding.npz",allow_pickle)
+    # get_skipgram_embedding_matrix(cleaned_tweets)
+    X = np.load("data/sentqs_skipgram_embedding.npz",allow_pickle=True)
     X = X["embedding"]
+
+
+    # Create Domain Adaptation Problem by seperating sentiment from
+    # nasdaq twwets and sentiment tweets into source and target domain
     create_domain_adaptation_problem(X,tweets,hashtags,sentiment)
-    # model = generate_embedding_model(cleaned_tweets,sentiment)
+
     # # Plot eigenspectrum of embeddings
     X = np.load("data/sentqs_skipgram_embedding.npz")
     plot_eigenspectrum(X)
     #
     # # Plot representation of 2 dimensional tsne embedding
     # plot_tsne(X,sentiment)
-    X = X["embedding"]
     #X = np.load("data/sentqs_skipgram_embedding.npz")
-    create_domain_adaptation_problem(X,tweets,sentiment,sentiment)
 
     #run_classification()
 
