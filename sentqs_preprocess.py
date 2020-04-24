@@ -249,8 +249,8 @@ def get_glove_embedding_matrix(word_index, dim):
         return embedding_matrix
 
 def get_skipgram_embedding_matrix(text, dim=200, batch_size=256, window_size=5, epochs = 100):
-    if os.path.isfile("data/sentqs_da_skipgram.npy"):
-        loaded_embedding = np.load("data/sentqs_da_skipgram.npy")
+    if os.path.isfile("data/sentqs_skipgram.npy"):
+        loaded_embedding = np.load("data/sentqs_skipgram.npy")
         print('Loaded Skipgram embedding.')
         return loaded_embedding[:,1:]
     else:
@@ -470,24 +470,25 @@ def load_preprocessed_sentqs():
 
 def main_preprocessing():
 
-    cleaned_tweets, y,sentiment= load_preprocessed_sentqs()
+    cleaned_tweets,hashtags,sentiment= load_preprocessed_sentqs()
     #
     # # Get some statistics of the dataset
     # describe_dataset(cleaned_tweets,labels)
     #
     # # Create feature representation: TFIDF Variants and skipgram embedding with 1000 dimension and negative sampling
-    #create_representation(cleaned_tweets,y)
-    model = generate_embedding_model(cleaned_tweets,sentiment)
-    #
+    get_skipgram_embedding_matrix(cleaned_tweets)
+    X = np.load("data/sentqs_skipgram_embedding.npy")
+    create_domain_adaptation_problem(X,tweets,hashtags,sentiment)
+    # model = generate_embedding_model(cleaned_tweets,sentiment)
     # # Plot eigenspectrum of embeddings
     # X = np.load("data/sentqs_skipgram_embedding.npy")
     # plot_eigenspectrum(X)
     #
     # # Plot representation of 2 dimensional tsne embedding
-    # plot_tsne(X,labels)
+    # plot_tsne(X,sentiment)
     #
     #X = np.load("data/sentqs_skipgram_embedding.npy")
-    #create_domain_adaptation_problem(X,tweets,labels,sentiment)
+    #create_domain_adaptation_problem(X,tweets,sentiment,sentiment)
 
     #run_classification()
 
