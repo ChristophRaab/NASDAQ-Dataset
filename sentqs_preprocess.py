@@ -30,14 +30,15 @@ from keras.preprocessing.sequence import make_sampling_table
 from numpy import asarray, zeros
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.layers import Dense, Input, GlobalMaxPooling3D, GlobalMaxPooling1D, MaxPooling1D
-from tensorflow.keras.layers import Conv1D, Conv3D, Conv2D, MaxPooling3D, Embedding, concatenate
+from tensorflow.keras.layers import Dense, Input, GlobalMaxPooling3D, GlobalMaxPooling2D, MaxPooling2D, GlobalAveragePooling2D
+from tensorflow.keras.layers import Conv2D, Conv3D, Conv2D, MaxPooling3D, Embedding, concatenate
 from tensorflow.keras.models import Model
 from tensorflow.keras.initializers import Constant
 # from keras.utils.vis_utils import plot_model
 from tensorflow.keras.utils import plot_model
 from scipy import spatial
 from gensim.models import Word2Vec
+from tensorflow.keras.applications.densenet import DenseNet121
 
 def run_classification():
     data = np.load('data/sentqs_dataset.npz')
@@ -313,7 +314,8 @@ def  get_skipgram_embedding_matrix(text, dim = 200, window_size=5, min_word_occu
 
 def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True, dim = 200, val_split=0.2):
     # Preprocessing
-    MAX_SEQUENCE_LENGTH = len(max(text, key=lambda i: len(i))) + 1
+    #MAX_SEQUENCE_LENGTH = len(max(text, key=lambda i: len(i))) + 1
+    MAX_SEQUENCE_LENGTH = 335
     texts = [''.join(x) for x in text]
     # finally, vectorize the text samples into a 2D integer tensor
     tokenizer = Tokenizer()
@@ -373,15 +375,17 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
                                 input_length=MAX_SEQUENCE_LENGTH,
                                 trainable=True)(sequence_input)
 
-    combined = keras.backend.stack([glove_embedding_layer, skipgram_embedding_layer, own_embedding_layer], axis=1)
+    combined = keras.backend.stack([glove_embedding_layer, skipgram_embedding_layer, own_embedding_layer], axis=3)
 
-    x = Conv1D(128, 5, activation='relu')(combined)
-    x = MaxPooling1D(5)(x)
-    x = Conv1D(128, 5, activation='relu')(x)
-    x = MaxPooling1D(5)(x)
-    x = Conv1D(128, 5, activation='relu')(x)
-    x = GlobalMaxPooling1D()(x)
-    x = Dense(128, activation='relu')(x)
+    #x = Conv2D(128, 5, activation='relu')(combined)
+    #x = MaxPooling2D(5)(x)
+    #x = Conv2D(128, 5, activation='relu')(x)
+    #x = MaxPooling2D(5)(x)
+    #x = Conv2D(128, 5, activation='relu')(x)
+    #x = GlobalMaxPooling2D()(x)
+    #x = Dense(128, activation='relu')(x)
+    x = DenseNet121(include_top=False, weights="imagenet", input_shape = (MAX_SEQUENCE_LENGTH, dim, 3))(combined)
+    x = GlobalAveragePooling2D()(x)
     preds = Dense(3, activation='softmax')(x)
 
     model = Model(inputs=sequence_input, outputs=preds)
