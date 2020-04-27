@@ -251,7 +251,7 @@ def get_glove_embedding_matrix(word_index, dim):
         np.savez_compressed("data/sentqs_glove_embedding.npz", embedding=embedding_matrix)
         return embedding_matrix
 
-def get_skipgram_embedding_matrix(text, dim=200, batch_size=256, window_size=5, epochs = 100):
+def get_skipgram_sentence_embedding_matrix(text, dim=200, batch_size=256, window_size=5, epochs = 100):
     if os.path.isfile("data/sentqs_skipgram_embedding.npz"):
         loaded_embedding = np.load("data/sentqs_skipgram_embedding.npz")
         loaded_embedding = loaded_embedding["embedding"]
@@ -279,6 +279,9 @@ def get_skipgram_embedding_matrix(text, dim=200, batch_size=256, window_size=5, 
         emb = enc @ model.get_weights()[0]
         np.savez_compressed("data/sentqs_skipgram_embedding", embedding=emb)
         return emb
+
+def  get_skipgram_embedding_matrix(text, epochs=1):
+    pass
 
 def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True, dim = 200, val_split=0.2):
     # Preprocessing
@@ -327,7 +330,7 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
                                 input_length=MAX_SEQUENCE_LENGTH,
                                 trainable=False)(sequence_input)
 
-    skipgram_embedding = Input(shape=(1,dim,),name="skipgram_input")
+    # skipgram_embedding = Input(shape=(1,dim,),name="skipgram_input")
 
 
     own_embedding_layer = Embedding(num_words,
@@ -337,7 +340,7 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
                                 input_length=MAX_SEQUENCE_LENGTH,
                                 trainable=True)(sequence_input)
 
-    combined = concatenate([glove_embedding_layer, skipgram_embedding, own_embedding_layer],axis=1)
+    combined = keras.backend.stack([glove_embedding_layer,own_embedding_layer], axis=1)
 
     x = Conv1D(128, 5, activation='relu')(combined)
     x = MaxPooling1D(5)(x)
@@ -357,10 +360,10 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
     plot_model(model, to_file='model_combined.png')
 
     # Train model
-    model.fit([x_train,emb_train], y_train,
+    model.fit(x_train, y_train,
               batch_size=batch_size,
               epochs=epochs,
-              validation_data=([x_val,emb_val], y_val))
+              validation_data=(x_val, y_val))
 
     if save:
         model.save("data/sentqs_full.h5")
@@ -461,7 +464,7 @@ def load_preprocessed_sentqs():
     else:
         hashtags = ['ADBE', 'GOOGL', 'AMZN', 'AAPL', 'ADSK', 'BKNG', 'EXPE', 'INTC', 'MSFT', 'NFLX', 'NVDA', 'PYPL', 'SBUX',
          'TSLA', 'XEL', 'positive', 'bad', 'sad']
-#𝚙𝚘𝚜𝚒𝚝𝚒𝚟𝚎
+
         # Loading and preprocessing of tweets
         df = pd.read_csv("Tweets.csv")
         sentiment = pd.to_numeric(df.iloc[:, -1], errors="raise", downcast="float")
