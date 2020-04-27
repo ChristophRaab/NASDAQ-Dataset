@@ -30,13 +30,14 @@ from keras.preprocessing.sequence import make_sampling_table
 from numpy import asarray, zeros
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.layers import Dense, Input, GlobalMaxPooling1D
-from tensorflow.keras.layers import Conv1D, MaxPooling1D, Embedding, concatenate
+from tensorflow.keras.layers import Dense, Input, GlobalMaxPooling3D, GlobalMaxPooling1D, MaxPooling1D
+from tensorflow.keras.layers import Conv1D, Conv3D, Conv2D, MaxPooling3D, Embedding, concatenate
 from tensorflow.keras.models import Model
 from tensorflow.keras.initializers import Constant
 # from keras.utils.vis_utils import plot_model
 from tensorflow.keras.utils import plot_model
 from scipy import spatial
+from gensim.models import Word2Vec
 
 def run_classification():
     data = np.load('data/sentqs_dataset.npz')
@@ -280,8 +281,35 @@ def get_skipgram_sentence_embedding_matrix(text, dim=200, batch_size=256, window
         np.savez_compressed("data/sentqs_skipgram_embedding", embedding=emb)
         return emb
 
-def  get_skipgram_embedding_matrix(text, epochs=1):
-    pass
+def  get_skipgram_embedding_matrix(text, dim = 200, window_size=5, min_word_occurance=1, epochs=1):
+    if os.path.isfile("data/sentqs_skipgram_gensim_embedding.npz"):
+        loaded_embedding = np.load("data/sentqs_skipgram_gensim_embedding.npz")
+        loaded_embedding = loaded_embedding["embedding"]
+        print('Loaded Skipgram embedding.')
+        return loaded_embedding
+    else:
+        x = [row.split(' ') for row in text]
+        model = Word2Vec(x, size=dim, window=window_size, min_count=min_word_occurance, workers=4, sg=1) #sg = 1: use skipgram
+
+        words = model.wv.vocab.keys()
+        vocab_size = len(words)
+        print("Vocab size", vocab_size)
+
+        t = Tokenizer()
+        t.fit_on_texts(text)
+
+        # total vocabulary size plus 0 for unknown words
+        # vocab_size = len(vocab) + 1
+        # define weight matrix dimensions with all 0
+        weight_matrix = zeros((vocab_size, dim))
+        # step vocab, store vectors using the Tokenizer's integer mapping
+        for word, i in t.word_index.items():
+            if i > vocab_size: break
+            if word in model.wv.vocab.keys():
+                weight_matrix[i] = model.wv[word]
+
+        np.savez_compressed("data/sentqs_skipgram_gensim_embedding", embedding=weight_matrix)
+        return weight_matrix
 
 def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True, dim = 200, val_split=0.2):
     # Preprocessing
@@ -325,8 +353,13 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
 
     glove_embedding_layer = Embedding(num_words,
                                 dim,
-                                #embeddings_initializer=Constant(get_glove_embedding_matrix(word_index, dim)),
                                 weights=[get_glove_embedding_matrix(word_index, dim)],
+                                input_length=MAX_SEQUENCE_LENGTH,
+                                trainable=False)(sequence_input)
+
+    skipgram_embedding_layer = Embedding(num_words,
+                                dim,
+                                weights=[get_skipgram_embedding_matrix(texts, dim)],
                                 input_length=MAX_SEQUENCE_LENGTH,
                                 trainable=False)(sequence_input)
 
@@ -340,7 +373,7 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
                                 input_length=MAX_SEQUENCE_LENGTH,
                                 trainable=True)(sequence_input)
 
-    combined = keras.backend.stack([glove_embedding_layer,own_embedding_layer], axis=1)
+    combined = keras.backend.stack([glove_embedding_layer, skipgram_embedding_layer, own_embedding_layer], axis=1)
 
     x = Conv1D(128, 5, activation='relu')(combined)
     x = MaxPooling1D(5)(x)
@@ -351,7 +384,7 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
     x = Dense(128, activation='relu')(x)
     preds = Dense(3, activation='softmax')(x)
 
-    model = Model(inputs=[sequence_input,skipgram_embedding], outputs=preds)
+    model = Model(inputs=sequence_input, outputs=preds)
     model.compile(loss='categorical_crossentropy',
                   optimizer='rmsprop',
                   metrics=['acc'])
