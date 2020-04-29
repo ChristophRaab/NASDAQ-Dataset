@@ -39,7 +39,9 @@ from tensorflow.keras.utils import plot_model
 from scipy import spatial
 from gensim.models import Word2Vec
 from tensorflow.keras.applications.densenet import DenseNet121
-
+from tensorflow.keras.layers import concatenate
+from tensorflow.keras import backend
+import tensorflow as tf
 def run_classification():
     data = np.load('data/sentqs_dataset.npz')
     Xs = data["arr_0"]
@@ -312,7 +314,7 @@ def  get_skipgram_embedding_matrix(text, dim = 200, window_size=5, min_word_occu
         np.savez_compressed("data/sentqs_skipgram_gensim_embedding", embedding=weight_matrix)
         return weight_matrix
 
-def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True, dim = 200, val_split=0.2):
+def generate_embedding_model(text, y, batch_size=32, epochs = 50, save = True, dim = 200, val_split=0.2):
     # Preprocessing
     #MAX_SEQUENCE_LENGTH = len(max(text, key=lambda i: len(i))) + 1
     MAX_SEQUENCE_LENGTH = 335
@@ -350,61 +352,61 @@ def generate_embedding_model(text, y, batch_size=256, epochs = 100, save = True,
     emb_val = emb[-num_validation_samples:]
     # Build model
     MAX_SEQUENCE_LENGTH = len(max(text, key=lambda i: len(i))) + 1
+    with tf.device('/GPU:0'):
+        sequence_input = Input(shape=(MAX_SEQUENCE_LENGTH,), dtype='int32',name="embedding_input")
 
-    sequence_input = Input(shape=(MAX_SEQUENCE_LENGTH,), dtype='int32',name="embedding_input")
+        glove_embedding_layer = Embedding(num_words,
+                                    dim,
+                                    weights=[get_glove_embedding_matrix(word_index, dim)],
+                                    input_length=MAX_SEQUENCE_LENGTH,
+                                    trainable=False)(sequence_input)
 
-    glove_embedding_layer = Embedding(num_words,
-                                dim,
-                                weights=[get_glove_embedding_matrix(word_index, dim)],
-                                input_length=MAX_SEQUENCE_LENGTH,
-                                trainable=False)(sequence_input)
+        skipgram_embedding_layer = Embedding(num_words,
+                                    dim,
+                                    weights=[get_skipgram_embedding_matrix(texts, dim)],
+                                    input_length=MAX_SEQUENCE_LENGTH,
+                                    trainable=False)(sequence_input)
 
-    skipgram_embedding_layer = Embedding(num_words,
-                                dim,
-                                weights=[get_skipgram_embedding_matrix(texts, dim)],
-                                input_length=MAX_SEQUENCE_LENGTH,
-                                trainable=False)(sequence_input)
-
-    # skipgram_embedding = Input(shape=(1,dim,),name="skipgram_input")
+        # skipgram_embedding = Input(shape=(1,dim,),name="skipgram_input")
 
 
-    own_embedding_layer = Embedding(num_words,
-                                dim,
-                                #embeddings_initializer=Constant(get_skipgram_embedding_matrix(text, epochs=1)),
-                                #weights=get_skipgram_embedding_matrix(text, epochs=1),
-                                input_length=MAX_SEQUENCE_LENGTH,
-                                trainable=True)(sequence_input)
+        own_embedding_layer = Embedding(num_words,
+                                    dim,
+                                    #embeddings_initializer=Constant(get_skipgram_embedding_matrix(text, epochs=1)),
+                                    #weights=get_skipgram_embedding_matrix(text, epochs=1),
+                                    input_length=MAX_SEQUENCE_LENGTH,
+                                    trainable=True)(sequence_input)
 
-    combined = keras.backend.stack([glove_embedding_layer, skipgram_embedding_layer, own_embedding_layer], axis=3)
+        # combined = tf.stack([glove_embedding_layer, skipgram_embedding_layer, own_embedding_layer],axis=3)
+        combined=  tf.keras.layers.Lambda(lambda t: tf.stack(t,axis=3))([glove_embedding_layer, skipgram_embedding_layer, own_embedding_layer])
+        #x = Conv2D(128, 5, activation='relu')(combined)
+        #x = MaxPooling2D(5)(x)
+        #x = Conv2D(128, 5, activation='relu')(x)
+        #x = MaxPooling2D(5)(x)
+        #x = Conv2D(128, 5, activation='relu')(x)
+        #x = GlobalMaxPooling2D()(x)
+        #x = Dense(128, activation='relu')(x)
+        x = DenseNet121(include_top=False, weights="imagenet", input_shape = (MAX_SEQUENCE_LENGTH, dim, 3))(combined)
+        x = GlobalAveragePooling2D()(x)
+        preds = Dense(3, activation='softmax')(x)
 
-    #x = Conv2D(128, 5, activation='relu')(combined)
-    #x = MaxPooling2D(5)(x)
-    #x = Conv2D(128, 5, activation='relu')(x)
-    #x = MaxPooling2D(5)(x)
-    #x = Conv2D(128, 5, activation='relu')(x)
-    #x = GlobalMaxPooling2D()(x)
-    #x = Dense(128, activation='relu')(x)
-    x = DenseNet121(include_top=False, weights="imagenet", input_shape = (MAX_SEQUENCE_LENGTH, dim, 3))(combined)
-    x = GlobalAveragePooling2D()(x)
-    preds = Dense(3, activation='softmax')(x)
+        model = Model(inputs=sequence_input, outputs=preds)
+        model.compile(loss='categorical_crossentropy',
+                    optimizer='rmsprop',
+                    metrics=['acc'])
 
-    model = Model(inputs=sequence_input, outputs=preds)
-    model.compile(loss='categorical_crossentropy',
-                  optimizer='rmsprop',
-                  metrics=['acc'])
+        model.summary()
+        # plot_model(model, to_file='model_combined.png')
 
-    model.summary()
-    plot_model(model, to_file='model_combined.png')
+        # Train model
+        model.fit(x_train, y_train,
+                batch_size=batch_size,
+                epochs=epochs,
+                validation_data=(x_val, y_val))
 
-    # Train model
-    model.fit(x_train, y_train,
-              batch_size=batch_size,
-              epochs=epochs,
-              validation_data=(x_val, y_val))
-
-    if save:
-        model.save("data/sentqs_full.h5")
-    return model
+        if save:
+            model.save("data/sentqs_full.h5")
+        return model
 
 def tsne_embedding(X):
     print("Starting TSNE\n")
