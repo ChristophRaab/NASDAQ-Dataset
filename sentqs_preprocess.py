@@ -30,7 +30,7 @@ from keras.preprocessing.sequence import make_sampling_table
 from numpy import asarray, zeros
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.layers import Dense, Input, GlobalMaxPooling3D, GlobalMaxPooling2D, MaxPooling2D, GlobalAveragePooling2D
+from tensorflow.keras.layers import Dense, Input, GlobalMaxPooling3D, GlobalMaxPooling2D, MaxPooling2D, GlobalAveragePooling2D,BatchNormalization
 from tensorflow.keras.layers import Conv2D, Conv3D, Conv2D, MaxPooling3D, Embedding, concatenate
 from tensorflow.keras.models import Model
 from tensorflow.keras.initializers import Constant
@@ -314,7 +314,7 @@ def  get_skipgram_embedding_matrix(text, dim = 200, window_size=5, min_word_occu
         np.savez_compressed("data/sentqs_skipgram_gensim_embedding", embedding=weight_matrix)
         return weight_matrix
 
-def generate_embedding_model(text, y, batch_size=32, epochs = 50, save = True, dim = 200, val_split=0.2):
+def generate_embedding_model(text, y,source_idx,target_idx,batch_size=32, epochs = 50, save = True, dim = 200, val_split=0.2,model_size="large"):
     # Preprocessing
     #MAX_SEQUENCE_LENGTH = len(max(text, key=lambda i: len(i))) + 1
     MAX_SEQUENCE_LENGTH = 335
@@ -341,10 +341,10 @@ def generate_embedding_model(text, y, batch_size=32, epochs = 50, save = True, d
     labels = labels[indices]
     num_validation_samples = int(val_split * data.shape[0])
 
-    x_train = data[:-num_validation_samples]
-    y_train = labels[:-num_validation_samples]
-    x_val = data[-num_validation_samples:]
-    y_val = labels[-num_validation_samples:]
+    x_train = data[source_idx]
+    y_train = labels[source_idx]
+    x_val = data[target_idx]
+    y_val = labels[target_idx]
 
     emb = get_skipgram_embedding_matrix(text, epochs=1)
     emb = np.expand_dims(emb, 1)
@@ -353,6 +353,59 @@ def generate_embedding_model(text, y, batch_size=32, epochs = 50, save = True, d
     # Build model
     MAX_SEQUENCE_LENGTH = len(max(text, key=lambda i: len(i))) + 1
     with tf.device('/GPU:0'):
+        # if model_size == "small":
+
+        #     from keras.models import Sequential
+        #     from keras.layers import Dense, Dropout, Activation
+        #     from keras.layers import Embedding
+        #     from keras.layers import Conv1D, GlobalMaxPooling1D
+        #     from keras.datasets import imdb
+        #     max_features = 5000
+        #     maxlen = 400
+        #     batch_size = 32
+        #     embedding_dims = 50
+        #     filters = 250
+        #     kernel_size = 3
+        #     hidden_dims = 250
+        #     epochs = 2
+        #     model = Sequential()
+
+        #     # we start off with an efficient embedding layer which maps
+        #     # our vocab indices into embedding_dims dimensions
+        #     model.add(Embedding(num_words,
+        #                                 dim,
+        #                                 weights=[get_skipgram_embedding_matrix(texts, dim)],
+        #                                 input_length=MAX_SEQUENCE_LENGTH,
+        #                                 trainable=False))
+        #     model.add(Dropout(0.2))
+
+        #     # we add a Convolution1D, which will learn filters
+        #     # word group filters of size filter_length:
+        #     model.add(Conv1D(filters,
+        #                     kernel_size,
+        #                     padding='valid',
+        #                     activation='relu',
+        #                     strides=1))
+        #     # we use max pooling:
+        #     model.add(GlobalMaxPooling1D())
+
+        #     # We add a vanilla hidden layer:
+        #     model.add(Dense(hidden_dims))
+        #     model.add(Dropout(0.2))
+        #     model.add(Activation('relu'))
+
+        #     # We project onto a single unit output layer, and squash it with a sigmoid:
+        #     model.add(Dense(3))
+        #     model.add(Activation('sigmoid'))
+
+        #     model.compile(loss='categorical_crossentropy',
+        #                 optimizer='adam',
+        #                 metrics=['accuracy'])
+        #     model.fit(x_train, y_train,
+        #             batch_size=128,
+        #             epochs=50,
+        #             validation_data=(x_val, y_val))
+
         sequence_input = Input(shape=(MAX_SEQUENCE_LENGTH,), dtype='int32',name="embedding_input")
 
         glove_embedding_layer = Embedding(num_words,
@@ -360,36 +413,38 @@ def generate_embedding_model(text, y, batch_size=32, epochs = 50, save = True, d
                                     weights=[get_glove_embedding_matrix(word_index, dim)],
                                     input_length=MAX_SEQUENCE_LENGTH,
                                     trainable=False)(sequence_input)
-
         skipgram_embedding_layer = Embedding(num_words,
                                     dim,
                                     weights=[get_skipgram_embedding_matrix(texts, dim)],
                                     input_length=MAX_SEQUENCE_LENGTH,
                                     trainable=False)(sequence_input)
 
-        # skipgram_embedding = Input(shape=(1,dim,),name="skipgram_input")
+        if model_size =="medium":
+
+            combined=  tf.keras.layers.Lambda(lambda t: tf.stack(t,axis=3))([skipgram_embedding_layer, glove_embedding_layer])
+            x = Conv2D(128, 5, activation='relu')(combined)
+            x = MaxPooling2D(5)(x)
+            x = Conv2D(128, 5, activation='relu')(x)
+            x = MaxPooling2D(5)(x)
+            x = Conv2D(128, 5, activation='relu')(x)
+            x = GlobalMaxPooling2D()(x)
+            x = Dense(128, activation='relu')(x)
 
 
-        own_embedding_layer = Embedding(num_words,
+
+        if model_size =="large":
+            own_embedding_layer = Embedding(num_words,
                                     dim,
                                     #embeddings_initializer=Constant(get_skipgram_embedding_matrix(text, epochs=1)),
                                     #weights=get_skipgram_embedding_matrix(text, epochs=1),
                                     input_length=MAX_SEQUENCE_LENGTH,
                                     trainable=True)(sequence_input)
 
-        # combined = tf.stack([glove_embedding_layer, skipgram_embedding_layer, own_embedding_layer],axis=3)
-        combined=  tf.keras.layers.Lambda(lambda t: tf.stack(t,axis=3))([glove_embedding_layer, skipgram_embedding_layer, own_embedding_layer])
-        #x = Conv2D(128, 5, activation='relu')(combined)
-        #x = MaxPooling2D(5)(x)
-        #x = Conv2D(128, 5, activation='relu')(x)
-        #x = MaxPooling2D(5)(x)
-        #x = Conv2D(128, 5, activation='relu')(x)
-        #x = GlobalMaxPooling2D()(x)
-        #x = Dense(128, activation='relu')(x)
-        x = DenseNet121(include_top=False, weights="imagenet", input_shape = (MAX_SEQUENCE_LENGTH, dim, 3))(combined)
-        x = GlobalAveragePooling2D()(x)
-        preds = Dense(3, activation='softmax')(x)
+            combined = tf.stack([glove_embedding_layer, skipgram_embedding_layer, own_embedding_layer],axis=3)
+            x = DenseNet121(include_top=False, weights=None, input_shape = (MAX_SEQUENCE_LENGTH, dim, 3))(combined)
+            x = GlobalAveragePooling2D()(x)
 
+        preds = Dense(3, activation='softmax')(x)
         model = Model(inputs=sequence_input, outputs=preds)
         model.compile(loss='categorical_crossentropy',
                     optimizer='rmsprop',
@@ -404,8 +459,8 @@ def generate_embedding_model(text, y, batch_size=32, epochs = 50, save = True, d
                 epochs=epochs,
                 validation_data=(x_val, y_val))
 
-        if save:
-            model.save("data/sentqs_full.h5")
+        # if save:
+        #     model.save("data/sentqs_full.h5")
         return model
 
 def tsne_embedding(X):
@@ -476,11 +531,10 @@ def plot_tsne(X:None,labels):
         plt.savefig('plots/sentqs_tsne_plot_' + str(p) + ".pdf", dpi=1000, transparent=True)
         plt.show()
 
-def create_domain_adaptation_problem(X,tweets,labels,sentiment):
+def create_domain_adaptation_data_labels(X,tweets,labels,sentiment):
     # hastags positive bad sad source und rest target
     labels = np.array([s if "#bad" not in s else "#sad" for s in labels])
-    y = preprocessing.LabelEncoder().fit_transform(labels)
-    source = np.where(np.logical_or(labels == "#bad", labels == "#sad",labels == "#positive"))[0]
+    source = np.where(np.logical_or(labels == "#sad",labels == "#positive"))[0]
     target = np.where(np.logical_not(labels == "#sad", labels == "#positive"))[0]
     Xs = X[source]
     Xt = X[target]
@@ -499,7 +553,7 @@ def create_domain_adaptation_problem(X,tweets,labels,sentiment):
 def load_preprocessed_sentqs():
     if os.path.isfile("data/sentqs_preprocessed.npz"):
         loaded_data = np.load("data/sentqs_preprocessed.npz")
-        return loaded_data['cleaned_tweets'],loaded_data['tweets'], loaded_data['y'],loaded_data['sentiment']
+        return loaded_data['cleaned_tweets'],loaded_data["tweets"], loaded_data['y'],loaded_data['sentiment'],loaded_data["source_idx"],loaded_data["target_idx"]
     else:
         hashtags = ['ADBE', 'GOOGL', 'AMZN', 'AAPL', 'ADSK', 'BKNG', 'EXPE', 'INTC', 'MSFT', 'NFLX', 'NVDA', 'PYPL', 'SBUX',
          'TSLA', 'XEL', 'positive', 'bad', 'sad']
@@ -511,13 +565,22 @@ def load_preprocessed_sentqs():
         cleaned_tweets = cleanup.clean_text(tweets)
 
         y = preprocessing.LabelEncoder().fit_transform(labels)
-        np.savez_compressed("data/sentqs_preprocessed.npz",tweets=tweets, cleaned_tweets=cleaned_tweets, y=y,sentiment=sentiment)
-        return cleaned_tweets,tweets, y,sentiment
+
+        source_idx,target_idx = create_domain_adaptation_index(tweets,labels,sentiment)
+        np.savez_compressed("data/sentqs_preprocessed.npz",tweets=tweets, cleaned_tweets=cleaned_tweets, y=y,sentiment=sentiment,source_idx=source_idx,target_idx=target_idx)
+        return cleaned_tweets,tweets, y,sentiment,source_idx,target_idx
+
+def create_domain_adaptation_index(tweets,labels,sentiment):
+    labels = np.array([s if "#bad" not in s else "#sad" for s in labels])
+    source_idx = np.where(np.logical_or(labels == "#sad",labels == "#positive"))[0]
+    target_idx = np.where(np.logical_not(labels == "#sad", labels == "#positive"))[0]
+    return source_idx,target_idx
+
 
 def main_preprocessing():
 
-    cleaned_tweets,tweets,hashtags,sentiment= load_preprocessed_sentqs()
-    model = generate_embedding_model(cleaned_tweets,sentiment)
+    cleaned_tweets,tweets,hashtags,sentiment, source_idx, target_idx = load_preprocessed_sentqs()
+    model = generate_embedding_model(cleaned_tweets,sentiment,source_idx,target_idx,model_size="large")
 
 
     # # Get some statistics of the dataset
@@ -527,16 +590,16 @@ def main_preprocessing():
 
     # # Create feature representation: TFIDF Variants and skipgram embedding with 1000 dimension and negative sampling
     # get_skipgram_embedding_matrix(cleaned_tweets)
-    X = np.load("data/sentqs_skipgram_embedding.npz",allow_pickle=True)
+    X = np.load("data/sentqs_skipgram_gensim_embedding.npz",allow_pickle=True)
     X = X["embedding"]
 
 
     # Create Domain Adaptation Problem by seperating sentiment from
     # nasdaq twwets and sentiment tweets into source and target domain
-    create_domain_adaptation_problem(X,tweets,hashtags,sentiment)
+    create_domain_adaptation_data_labels(X,tweets,hashtags,sentiment)
 
     # # Plot eigenspectrum of embeddings
-    X = np.load("data/sentqs_skipgram_embedding.npz")
+    X = np.load("data/sentqs_skipgram_gensim_embedding.npz")
     plot_eigenspectrum(X)
     #
     # # Plot representation of 2 dimensional tsne embedding

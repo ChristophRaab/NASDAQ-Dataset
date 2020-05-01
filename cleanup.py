@@ -1,10 +1,10 @@
 import re
 import string
 from typing import List
-
+import nltk
 from nltk import SnowballStemmer
 from nltk.corpus import stopwords
-
+nltk.download('stopwords')
 
 def clean_text(tweets: List[str], lang: str = 'english') -> List[str]:
     """
