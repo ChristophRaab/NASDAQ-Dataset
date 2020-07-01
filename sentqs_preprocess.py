@@ -190,7 +190,7 @@ def  get_skipgram_gensim_embedding_matrix(text, dim = 200, window_size=5, min_wo
         np.savez_compressed("data/sentqs_skipgram_gensim_embedding", embedding=weight_matrix)
         return weight_matrix
 
-def generate_embedding_model(text, y,source_idx,target_idx,batch_size=32, epochs = 50, save = True, dim = 200, val_split=0.2,model_size="large"):
+def generate_embedding_model(text, y,source_idx,target_idx,batch_size=32, epochs = 50, save = True, dim = 200, val_split=0.2,model_size="medium"):
     # Preprocessing
     #MAX_SEQUENCE_LENGTH = len(max(text, key=lambda i: len(i))) + 1
     MAX_SEQUENCE_LENGTH = 335
@@ -256,14 +256,14 @@ def generate_embedding_model(text, y,source_idx,target_idx,batch_size=32, epochs
 
 
         if model_size =="large":
-            own_embedding_layer = Embedding(num_words,
+            skipgram_sentence_embedding = Embedding(num_words,
                                     dim,
                                     #embeddings_initializer=Constant(get_skipgram_gensim_embedding_matrix(text, epochs=1)),
                                     #weights=get_skipgram_gensim_embedding_matrix(text, epochs=1),
                                     input_length=MAX_SEQUENCE_LENGTH,
                                     trainable=True)(sequence_input)
 
-            combined = tf.stack([glove_embedding_layer, skipgram_embedding_layer, own_embedding_layer],axis=3)
+            combined = tf.keras.layers.Lambda(lambda t: tf.stack(t,axis=3))([skipgram_embedding_layer, glove_embedding_layer,skipgram_sentence_embedding])
             x = DenseNet121(include_top=False, weights=None, input_shape = (MAX_SEQUENCE_LENGTH, dim, 3))(combined)
             x = GlobalAveragePooling2D()(x)
 
@@ -391,7 +391,7 @@ def main_preprocessing():
     cleaned_tweets,tweets,hashtags,sentiment, source_idx, target_idx = load_sentqs_tweets()
 
     # Obtain embeddings and train deep learning model
-    # model = generate_embedding_model(cleaned_tweets,sentiment,source_idx,target_idx,model_size="large")
+    model = generate_embedding_model(cleaned_tweets,sentiment,source_idx,target_idx,model_size="medium")
 
 
     # Obtain skipgram embedding only
@@ -415,7 +415,7 @@ def main_preprocessing():
     # plot_tsne(X,sentiment)
 
     ## Loads the data into the program and trains machine learning model
-    load_data_run_classification()
+    # load_data_run_classification()
 
 
 if __name__ == '__main__':
