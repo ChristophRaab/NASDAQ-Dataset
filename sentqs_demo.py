@@ -21,6 +21,7 @@ from NBT import NBT
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn import preprocessing
 link = "https://cloud.fhws.de/index.php/s/M4rkbHj9FfW6YKo/download"
+
 file_name = "data/sentqs_dataset.npz"
 
 def download_data():
