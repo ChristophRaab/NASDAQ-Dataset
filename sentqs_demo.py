@@ -65,7 +65,7 @@ pool_size = 4
 
 # Training
 batch_size = 256
-epochs = 2
+epochs = 10
 # LSTM
 
 lstm_output_size = 70

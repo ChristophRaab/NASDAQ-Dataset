@@ -94,7 +94,7 @@ def generate_data(corpus, window_size, V):
             y = np_utils.to_categorical(y, V)
             yield X, y
 
-def get_glove_embedding_matrix(word_index, dim):
+def get_glove_embedding_matrix(texts, dim=200):
     if os.path.isfile("data/sentqs_glove_embedding.npz"):
         loaded_embedding = np.load("data/sentqs_glove_embedding.npz")
         print('Loaded Glove embedding.')
@@ -102,6 +102,12 @@ def get_glove_embedding_matrix(word_index, dim):
     else:
         # first, build index mapping words in the embeddings set
         # to their embedding vector
+
+        tokenizer = Tokenizer()
+        tokenizer.fit_on_texts(texts)
+        sequences = tokenizer.texts_to_sequences(texts)
+
+        word_index = tokenizer.word_index
 
         print('Indexing word vectors.')
 
@@ -132,8 +138,8 @@ def get_glove_embedding_matrix(word_index, dim):
         return embedding_matrix
 
 def get_skipgram_sentence_embedding_matrix(text, dim=200, batch_size=256, window_size=5, epochs = 100):
-    if os.path.isfile("data/sentqs_skipgram_embedding.npz"):
-        loaded_embedding = np.load("data/sentqs_skipgram_embedding.npz")
+    if os.path.isfile("data/sentqs_skipgram_sentence_embedding.npz"):
+        loaded_embedding = np.load("data/sentqs_skipgram_sentence_embedding.npz")
         loaded_embedding = loaded_embedding["embedding"]
         print('Loaded Skipgram embedding.')
         return loaded_embedding
@@ -157,7 +163,7 @@ def get_skipgram_sentence_embedding_matrix(text, dim=200, batch_size=256, window
         mlb = MultiLabelBinarizer()
         enc = mlb.fit_transform(corpus)
         emb = enc @ model.get_weights()[0]
-        np.savez_compressed("data/sentqs_skipgram_embedding", embedding=emb)
+        np.savez_compressed("data/sentqs_skipgram_sentence_embedding", embedding=emb)
         return emb
 
 def  get_skipgram_gensim_embedding_matrix(text, dim = 200, window_size=5, min_word_occurance=1, epochs=1):
@@ -233,7 +239,7 @@ def generate_embedding_model(text, y,source_idx,target_idx,batch_size=32, epochs
 
         glove_embedding_layer = Embedding(num_words,
                                     dim,
-                                    weights=[get_glove_embedding_matrix(word_index, dim)],
+                                    weights=[get_glove_embedding_matrix(texts, dim)],
                                     input_length=MAX_SEQUENCE_LENGTH,
                                     trainable=False)(sequence_input)
         skipgram_embedding_layer = Embedding(num_words,
@@ -386,40 +392,50 @@ def create_domain_adaptation_index(tweets,labels,sentiment):
     return source_idx,target_idx
 
 
-def main_preprocessing():
+def main_preprocessing(mode="multi_semantic_embedding"):
 
+    # Load neccessary informations about the dataset
     cleaned_tweets,tweets,hashtags,sentiment, source_idx, target_idx = load_sentqs_tweets()
 
-    # Obtain embeddings and train deep learning model
-    model = generate_embedding_model(cleaned_tweets,sentiment,source_idx,target_idx,model_size="medium")
+    if mode == "multi_semantic_embedding":
+
+        # Obtain embeddings and train deep learning model
+        model = generate_embedding_model(cleaned_tweets,sentiment,source_idx,target_idx,model_size="medium")
 
 
-    # Obtain skipgram embedding only
-    # Create feature representation: TFIDF-Variants and skipgram embedding with 1000 dimension and negative sampling
-    # # Output will be saved to disk
-    # X = get_skipgram_sentence_embedding_matrix(cleaned_tweets)
-    # create_domain_adaptation_dataset(X,tweets,source_idx,target_idx,sentiment)
-    # # Another possible embedding:
-    # # get_skipgram_gensim_embedding_matrix(cleaned_tweets)
+    elif mode == "train_embedding":
+        #Obtain skipgram embedding only
+        #Create feature representation: TFIDF-Variants and skipgram embedding with 1000 dimension and negative sampling
+        # Output will be saved to disk
+        get_glove_embedding_matrix(cleaned_tweets)
+        get_skipgram_gensim_embedding_matrix(cleaned_tweets)
+
+        # Sentence Skipgram is the base feature representation of the datatset
+        X = get_skipgram_sentence_embedding_matrix(cleaned_tweets)
+        create_domain_adaptation_dataset(X,tweets,source_idx,target_idx,sentiment)
+        # Another possible embedding:
 
 
 
-    # # Describe dataset with some common characteristics
-    # describe_dataset(cleaned_tweets,hashtags)
 
-    # ## Plot eigenspectrum of embeddings
-    # X = np.load("data/sentqs_skipgram_sentence_embedding.npz",allow_pickle=True)
-    # plot_eigenspectrum(X)
+    elif mode == "describe_dataset":
+        # # Describe dataset with some common characteristics
+        describe_dataset(cleaned_tweets,hashtags)
 
-    # ## Plot representation of 2 dimensional tsne embedding
-    # plot_tsne(X,sentiment)
+        # ## Plot eigenspectrum of embeddings
+        X = np.load("data/sentqs_skipgram_sentence_embedding.npz",allow_pickle=True)
+        plot_eigenspectrum(X)
 
-    ## Loads the data into the program and trains machine learning model
-    # load_data_run_classification()
+        # ## Plot representation of 2 dimensional tsne embedding
+        plot_tsne(X,sentiment)
+
+    else:
+        ## Loads the data into the program and trains machine learning model
+        load_data_run_classification()
 
 
 if __name__ == '__main__':
 
     # Obtain the all files of the dataset preprocessing, including plots, feature representation etc.
     # After running this file you will find the corresponding files for classification in the data folder
-    main_preprocessing()
+    main_preprocessing("train_embedding")
