@@ -423,7 +423,7 @@ def main_preprocessing(mode="multi_semantic_embedding"):
         describe_dataset(cleaned_tweets,hashtags)
 
         # ## Plot eigenspectrum of embeddings
-        X = np.load("data/sentqs_skipgram_sentence_embedding.npz",allow_pickle=True)
+        X = np.load("data/sentqs_skipgram_sentence_embedding.npz",allow_pickle=True)["embedding"]
         plot_eigenspectrum(X)
 
         # ## Plot representation of 2 dimensional tsne embedding
@@ -438,4 +438,8 @@ if __name__ == '__main__':
 
     # Obtain the all files of the dataset preprocessing, including plots, feature representation etc.
     # After running this file you will find the corresponding files for classification in the data folder
-    main_preprocessing("train_embedding")
+    # Choose a mode in the following to do so:
+    # 'multi_semantic_embedding' to obtain embedding and train a cnn-lstm network
+    # 'train_embedding' to obtain the embeddings and save it to the disk
+    # 'describe_dataset' to load the trained embedding and get some statistics and visualizations of the data
+    main_preprocessing("describe_dataset")
