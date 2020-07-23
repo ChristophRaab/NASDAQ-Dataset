@@ -20,7 +20,7 @@ import numpy as np
 from NBT import NBT
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn import preprocessing
-link = "https://cloud.fhws.de/index.php/s/M4rkbHj9FfW6YKo/download"
+link = "https://cloud.fhws.de/index.php/s/owxpgWtHgicCYMX"
 
 file_name = "data/sentqs_dataset.npz"
 

@@ -148,7 +148,7 @@ def get_skipgram_sentence_embedding_matrix(text, dim=200, batch_size=256, window
         t = Tokenizer()
         t.fit_on_texts(text)
         corpus = t.texts_to_sequences(text)
-        print(corpus)
+        #print(corpus)
         V = len(t.word_index)
         step_size = len(corpus) // batch_size
         model = Sequential()
@@ -407,8 +407,8 @@ def main_preprocessing(mode="multi_semantic_embedding"):
         #Obtain skipgram embedding only
         #Create feature representation: TFIDF-Variants and skipgram embedding with 1000 dimension and negative sampling
         # Output will be saved to disk
-        get_glove_embedding_matrix(cleaned_tweets)
-        get_skipgram_gensim_embedding_matrix(cleaned_tweets)
+        # get_glove_embedding_matrix(cleaned_tweets)
+        # get_skipgram_gensim_embedding_matrix(cleaned_tweets)
 
         # Sentence Skipgram is the base feature representation of the datatset
         X = get_skipgram_sentence_embedding_matrix(cleaned_tweets)
@@ -442,4 +442,4 @@ if __name__ == '__main__':
     # 'multi_semantic_embedding' to obtain embedding and train a cnn-lstm network
     # 'train_embedding' to obtain the embeddings and save it to the disk
     # 'describe_dataset' to load the trained embedding and get some statistics and visualizations of the data
-    main_preprocessing("describe_dataset")
+    main_preprocessing("train_embedding")
