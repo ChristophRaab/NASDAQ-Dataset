@@ -12,7 +12,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Activation
 from tensorflow.keras.layers import Embedding
 from tensorflow.keras.layers import LSTM
-from tensorflow.keras.layers import Conv1D, MaxPooling1D,Conv2D
+from tensorflow.keras.layers import Conv1D, MaxPooling1D,Conv2D, BatchNormalization
 from tensorflow.keras.datasets import imdb
 import requests
 import sys
@@ -20,7 +20,7 @@ import numpy as np
 from NBT import NBT
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn import preprocessing
-link = "https://cloud.fhws.de/index.php/s/owxpgWtHgicCYMX"
+link = "https://cloud.fhws.de/index.php/s/4sJ69ocZW8epAke/download"
 
 file_name = "data/sentqs_dataset.npz"
 
@@ -49,7 +49,7 @@ def download_data():
     Yt = data["arr_3"]
     return Xs,Ys,Xt,Yt
 
-#Xs,Ys,Xt,Yt = download_data()
+# Xs,Ys,Xt,Yt = download_data()
 
 #If dataset file is already downloaded
 data = np.load(file_name,allow_pickle=True)
