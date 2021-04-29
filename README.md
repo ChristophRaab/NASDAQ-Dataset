@@ -34,7 +34,7 @@ A primary challenge in the analysis and monitored classification of data streams
 * Store dataset ready for usage in `data/nsdqs_stream_skipgram.npy`.
   
 * Demo 
-Run `nsqds_demo.py` for a stream machine learning demonstration using SamKNN and RSVLQ. 
+Run `nsdqs_demo.py` for a stream machine learning demonstration using SamKNN and RSVLQ. 
   
 ## SentQS Dataset for Domain Adaptation 
 * The main dataset file can be found in `data/sentqs_skipgram_embedding.npy`. 
