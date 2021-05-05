@@ -12,7 +12,7 @@ import numpy as np
 import sys
 from skmultiflow.evaluation import EvaluatePrequential
 from skmultiflow.data.data_stream import DataStream
-from skmultiflow.trees.arf_hoeffding_tree import ARFHoeffdingTree
+from skmultiflow.trees import HoeffdingAdaptiveTreeClassifier
 from skmultiflow.lazy.sam_knn import SAMKNN
 link = "https://cloud.fhws.de/index.php/s/r4R8S3Tc6j3xK6T/download"
 file_name = "data/nsdqs_stream_skipgram.npy"
@@ -43,7 +43,7 @@ def download_data():
 data = np.load(file_name,allow_pickle=True)
 
 sam = SAMKNN()
-arf = ARFHoeffdingTree()
+arf = HoeffdingAdaptiveTreeClassifier()
 
 stream = DataStream(data[:,1:],data[:,0].astype(int))
 stream.prepare_for_use()
