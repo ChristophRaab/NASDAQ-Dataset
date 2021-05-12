@@ -66,7 +66,7 @@ def generate_data(corpus, window_size, V):
             y = np_utils.to_categorical(y, V)
             yield X, y
 
-def create_embedding(text,dim=1000,batch_size=256,window_size=5,epochs = 100):
+def create_embedding(text,dim=1000,batch_size=256,window_size=5,epochs = 1):
     text = [''.join(x) for x in text]
     t = Tokenizer()
     t.fit_on_texts(text)
@@ -74,8 +74,8 @@ def create_embedding(text,dim=1000,batch_size=256,window_size=5,epochs = 100):
     V = len(t.word_index)
     step_size = len(corpus) // batch_size
     model = Sequential()
-    model.add(Dense(input_dim=V, output_dim=dim,activation="softmax"))
-    model.add(Dense(input_dim=dim, output_dim=V, activation='softmax'))
+    model.add(Dense(input_dim=V, units=dim,activation="softmax"))
+    model.add(Dense(input_dim=dim, units=V, activation='softmax'))
 
     model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
     model.summary()
@@ -137,7 +137,7 @@ def plot_eigenspectrum(x):
 
 
 def plot_tsne(X:None,labels):
-    # tsne_embedding(X)
+    tsne_embedding(X)
 
     y = preprocessing.LabelEncoder().fit_transform(labels)
     for p in [5, 25, 50, 75, 100]:
@@ -161,14 +161,14 @@ def main_preprocessing():
     # Loading and preprocessing of tweets
     df = pd.read_csv("Tweets.csv")
     labels,tweets = seperate_tweets(df.iloc[:, 1],hashtags)
-    # cleaned_tweets = cleanup.clean_text(tweets)
-    # y = preprocessing.LabelEncoder().fit_transform(labels)
+    cleaned_tweets = cleanup.clean_text(tweets)
+    y = preprocessing.LabelEncoder().fit_transform(labels)
     #
     # # Get some statistics of the dataset
-    # describe_dataset(cleaned_tweets,labels)
+    describe_dataset(cleaned_tweets,labels)
     #
     # # Create feature representation: TFIDF Variants and skipgram embedding with 1000 dimension and negative sampling
-    # create_representation(cleaned_tweets,y)
+    create_representation(cleaned_tweets,y)
 
     # Plot eigenspectrum of embeddings
     X = np.load("data/nsdqs_skipgram_embedding.npy")

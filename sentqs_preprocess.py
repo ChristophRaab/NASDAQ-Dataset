@@ -137,7 +137,7 @@ def get_glove_embedding_matrix(texts, dim=200):
         np.savez_compressed("data/sentqs_glove_embedding.npz", embedding=embedding_matrix)
         return embedding_matrix
 
-def get_skipgram_sentence_embedding_matrix(text, dim=200, batch_size=256, window_size=5, epochs = 100):
+def get_skipgram_sentence_embedding_matrix(text, dim=200, batch_size=256, window_size=5, epochs = 1):
     if os.path.isfile("data/sentqs_skipgram_sentence_embedding.npz"):
         loaded_embedding = np.load("data/sentqs_skipgram_sentence_embedding.npz")
         loaded_embedding = loaded_embedding["embedding"]
@@ -152,8 +152,8 @@ def get_skipgram_sentence_embedding_matrix(text, dim=200, batch_size=256, window
         V = len(t.word_index)
         step_size = len(corpus) // batch_size
         model = Sequential()
-        model.add(Dense(dim, input_dim=V, activation="softmax"))
-        model.add(Dense(V, input_dim=dim, activation='softmax'))
+        model.add(Dense(units=dim, input_dim=V, activation="softmax"))
+        model.add(Dense(units=V, input_dim=dim, activation='softmax'))
 
         model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
         model.summary()
