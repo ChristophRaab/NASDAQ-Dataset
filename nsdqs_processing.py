@@ -13,12 +13,11 @@ import numpy as np
 from sklearn import preprocessing
 import cleanup
 from sklearn.feature_extraction.text import TfidfVectorizer
-from keras.layers import Dense
+from tensorflow.keras.layers import Dense
 from keras.utils import np_utils
 from keras.preprocessing.sequence import skipgrams
 from sklearn.manifold import TSNE
-from keras.models import Sequential
-from sklearn import decomposition
+from tensorflow.keras import Sequential
 from keras_preprocessing.text import Tokenizer
 from sklearn.preprocessing import MultiLabelBinarizer
 import matplotlib.pyplot as plt
