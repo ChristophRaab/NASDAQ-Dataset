@@ -133,3 +133,4 @@ data/*
 log/*
 .vscode/launch.json
 .vscode/settings.json
+/src/twint/
