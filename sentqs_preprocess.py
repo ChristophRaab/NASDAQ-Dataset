@@ -9,39 +9,32 @@ Plotting and description of datasets
 
 authors:  Christoph Raab
 """
-import scipy.io as sio
-import pandas as pd
-import numpy as np
 import os
-from sklearn import preprocessing
-import cleanup
-import keras
-from sklearn.feature_extraction.text import TfidfVectorizer
-#from tensorflow.keras.layers import Dense, Embedding, Flatten, Input, Conv1D, GlobalMaxPooling1D, MaxPooling1D
-from keras.utils import np_utils
-from tensorflow.keras.preprocessing.sequence import skipgrams, pad_sequences
-from sklearn.manifold import TSNE
-from tensorflow.keras.models import Sequential
-from sklearn import decomposition
-#from keras_preprocessing.text import Tokenizer
-from sklearn.preprocessing import MultiLabelBinarizer
+
+# from keras_preprocessing.text import Tokenizer
 import matplotlib.pyplot as plt
-from keras.preprocessing.sequence import make_sampling_table
-from numpy import asarray, zeros
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+# from keras.utils.vis_utils import plot_model
+from gensim.models import Word2Vec
+from numpy import zeros
+from sklearn import preprocessing
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.manifold import TSNE
+from tensorflow.keras.applications.densenet import DenseNet121
+from tensorflow.keras.layers import Conv2D, Embedding
+from tensorflow.keras.layers import Dense, Input, GlobalMaxPooling2D, MaxPooling2D, GlobalAveragePooling2D
+from tensorflow.keras.models import Model
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.layers import Dense, Input, GlobalMaxPooling3D, GlobalMaxPooling2D, MaxPooling2D, GlobalAveragePooling2D,BatchNormalization
-from tensorflow.keras.layers import Conv2D, Conv3D, Conv2D, MaxPooling3D, Embedding, concatenate
-from tensorflow.keras.models import Model
-from tensorflow.keras.initializers import Constant
-# from keras.utils.vis_utils import plot_model
-from tensorflow.keras.utils import plot_model
-from scipy import spatial
-from gensim.models import Word2Vec
-from tensorflow.keras.applications.densenet import DenseNet121
-from tensorflow.keras.layers import concatenate
-from tensorflow.keras import backend
-import tensorflow as tf
+
+import cleanup
+import skipgram
+
+
+# from tensorflow.keras.layers import Dense, Embedding, Flatten, Input, Conv1D, GlobalMaxPooling1D, MaxPooling1D
 
 def load_data_run_classification():
     data = np.load('data/sentqs_dataset.npz')
@@ -85,14 +78,7 @@ def seperate_tweets(data,hashtags,sentiment):
 
     return labels,tweets,sentiment_new
 
-def generate_data(corpus, window_size, V):
-    for words in corpus:
-        couples, labels = skipgrams(words, V, window_size, negative_samples=1, shuffle=True,sampling_table=make_sampling_table(V, sampling_factor=1e-05))
-        if couples:
-            X, y = zip(*couples)
-            X = np_utils.to_categorical(X, V)
-            y = np_utils.to_categorical(y, V)
-            yield X, y
+
 
 def get_glove_embedding_matrix(texts, dim=200):
     if os.path.isfile("data/sentqs_glove_embedding.npz"):
@@ -137,34 +123,6 @@ def get_glove_embedding_matrix(texts, dim=200):
         np.savez_compressed("data/sentqs_glove_embedding.npz", embedding=embedding_matrix)
         return embedding_matrix
 
-def get_skipgram_sentence_embedding_matrix(text, dim=200, batch_size=256, window_size=5, epochs = 1):
-    if os.path.isfile("data/sentqs_skipgram_sentence_embedding.npz"):
-        loaded_embedding = np.load("data/sentqs_skipgram_sentence_embedding.npz")
-        loaded_embedding = loaded_embedding["embedding"]
-        print('Loaded Skipgram embedding.')
-        return loaded_embedding
-    else:
-        text = [''.join(x) for x in text]
-        t = Tokenizer()
-        t.fit_on_texts(text)
-        corpus = t.texts_to_sequences(text)
-        #print(corpus)
-        V = len(t.word_index)
-        step_size = len(corpus) // batch_size
-        model = Sequential()
-        model.add(Dense(units=dim, input_dim=V, activation="softmax"))
-        model.add(Dense(units=V, input_dim=dim, activation='softmax'))
-
-        model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
-        model.summary()
-
-        model.fit(generate_data(corpus, window_size, V), epochs=epochs, steps_per_epoch=step_size)
-        # model.save("data/sentqs_full_skigram_arc.h5")
-        mlb = MultiLabelBinarizer()
-        enc = mlb.fit_transform(corpus)
-        emb = enc @ model.get_weights()[0]
-        np.savez_compressed("data/sentqs_skipgram_sentence_embedding", embedding=emb)
-        return emb
 
 def  get_skipgram_gensim_embedding_matrix(text, dim = 200, window_size=5, min_word_occurance=1, epochs=1):
     if os.path.isfile("data/sentqs_skipgram_gensim_embedding.npz"):
@@ -349,22 +307,6 @@ def plot_tsne(X:None,labels):
         plt.savefig('plots/sentqs_tsne_plot_' + str(p) + ".pdf", dpi=1000, transparent=True)
         plt.show()
 
-def create_domain_adaptation_dataset(X,tweets,source_idx,target_idx,sentiment):
-
-    Xs = X[source_idx]
-    Xt = X[target_idx]
-    Ys = sentiment[source_idx]
-    Yt = sentiment[target_idx]
-    data = [Xs,Ys,Xt,Yt]
-    np.savez('data/sentqs_dataset.npz', *data)
-    sio.savemat('data/sentqs_dataset.mat', {'Xs': Xs, 'Xt': Xt, 'Ys': Ys, 'Yt': Yt})
-    source_tweets = [tweets[i] for i in source_idx]
-    target_tweets = [tweets[i] for i in target_idx]
-
-    pd.DataFrame(source_tweets).to_csv("data/sentqs_source_tweets.csv")
-    pd.DataFrame(target_tweets).to_csv("data/sentqs_target_tweets.csv")
-    return  Xs,Ys,Xt,Yt
-
 def load_sentqs_tweets():
     if os.path.isfile("data/sentqs_preprocessed.npz"):
         loaded_data = np.load("data/sentqs_preprocessed.npz")
@@ -386,14 +328,15 @@ def load_sentqs_tweets():
         return cleaned_tweets,tweets, y,sentiment,source_idx,target_idx
 
 def create_domain_adaptation_index(tweets,labels,sentiment):
+    print("create domain adaptation")
     labels = np.array([s if "#bad" not in s else "#sad" for s in labels])
-    source_idx  = np.array([i for i,val in enumerate(labels) if val== "#sad" or val == "#bad" ])
-    target_idx = np.array([i for i,val in enumerate(labels) if val != "#sad" and val != "#bad" ])
+    source_idx  = np.array([i for i,val in enumerate(labels) if val== "#sad" or val == "#bad" ], dtype="int8")
+    target_idx = np.array([i for i,val in enumerate(labels) if val != "#sad" and val != "#bad" ], dtype="int8")
     return source_idx,target_idx
 
 
 def main_preprocessing(mode="multi_semantic_embedding"):
-
+    print("main_semantic_embedding")
     # Load neccessary informations about the dataset
     cleaned_tweets,tweets,hashtags,sentiment, source_idx, target_idx = load_sentqs_tweets()
 
@@ -403,16 +346,9 @@ def main_preprocessing(mode="multi_semantic_embedding"):
         model = generate_embedding_model(cleaned_tweets,sentiment,source_idx,target_idx,model_size="medium")
 
 
-    elif mode == "train_embedding":
-        #Obtain skipgram embedding only
-        #Create feature representation: TFIDF-Variants and skipgram embedding with 1000 dimension and negative sampling
-        # Output will be saved to disk
-        # get_glove_embedding_matrix(cleaned_tweets)
-        # get_skipgram_gensim_embedding_matrix(cleaned_tweets)
-
-        # Sentence Skipgram is the base feature representation of the datatset
-        X = get_skipgram_sentence_embedding_matrix(cleaned_tweets)
-        create_domain_adaptation_dataset(X,tweets,source_idx,target_idx,sentiment)
+    elif mode == "train_skipgram":
+        print("train_skipgram")
+        skipgram.train(cleaned_tweets,tweets,hashtags,sentiment, source_idx, target_idx)
         # Another possible embedding:
 
 
@@ -442,4 +378,6 @@ if __name__ == '__main__':
     # 'multi_semantic_embedding' to obtain embedding and train a cnn-lstm network
     # 'train_embedding' to obtain the embeddings and save it to the disk
     # 'describe_dataset' to load the trained embedding and get some statistics and visualizations of the data
-    main_preprocessing("train_embedding")
+    print("start")
+    main_preprocessing("train_skipgram")
+    print("finished")
