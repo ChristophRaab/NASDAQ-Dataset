@@ -323,8 +323,7 @@ def load_sentqs_tweets():
                loaded_data["source_idx"], loaded_data["target_idx"]
     else:
         hashtags = ['ADBE', 'GOOGL', 'AMZN', 'AAPL', 'ADSK', 'BKNG', 'EXPE', 'INTC', 'MSFT', 'NFLX', 'NVDA', 'PYPL',
-                    'SBUX',
-                    'TSLA', 'XEL', 'positive', 'bad', 'sad']
+                    'SBUX', 'TSLA', 'XEL', 'positive', 'bad', 'sad']
 
         # Loading and preprocessing of tweets
         df = pd.read_csv("Tweets.csv")
@@ -401,4 +400,6 @@ if __name__ == '__main__':
     # 'describe_dataset' to load the trained embedding and get some statistics and visualizations of the data
     print("start")
     main_preprocessing("train_skipgram")
+    # main_preprocessing("train_bert")
+    # main_preprocessing("train_albert")
     print("finished")
