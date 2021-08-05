@@ -32,6 +32,8 @@ from tensorflow.keras.utils import to_categorical
 
 import cleanup
 import skipgram
+import bert
+import albert
 
 
 # from tensorflow.keras.layers import Dense, Embedding, Flatten, Input, Conv1D, GlobalMaxPooling1D, MaxPooling1D
@@ -360,7 +362,16 @@ def main_preprocessing(mode="multi_semantic_embedding"):
     elif mode == "train_skipgram":
         print("train_skipgram")
         skipgram.train(cleaned_tweets, tweets, hashtags, sentiment, source_idx, target_idx)
-        # Another possible embedding:
+
+    elif mode == "train_bert":
+        print("train_bert")
+        bert.train(cleaned_tweets, tweets, hashtags, sentiment, source_idx, target_idx)
+
+    elif mode == "train_albert":
+        print("train_albert")
+        albert.train(cleaned_tweets, tweets, hashtags, sentiment, source_idx, target_idx)
+
+    # Another possible embedding:
 
 
 
