@@ -361,15 +361,6 @@ def main_preprocessing(mode="multi_semantic_embedding"):
     elif mode == "train_skipgram":
         print("train_skipgram")
         skipgram.train(cleaned_tweets, tweets, hashtags, sentiment, source_idx, target_idx)
-
-    elif mode == "train_bert":
-        print("train_bert")
-        bert.train(cleaned_tweets, tweets, hashtags, sentiment, source_idx, target_idx)
-
-    elif mode == "train_albert":
-        print("train_albert")
-        albert.train(cleaned_tweets, tweets, hashtags, sentiment, source_idx, target_idx)
-
     # Another possible embedding:
 
 
