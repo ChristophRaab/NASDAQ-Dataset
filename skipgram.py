@@ -20,6 +20,11 @@ def train(cleaned_tweets, tweets, hashtags, sentiment, source_idx, target_idx):
 
     # Sentence Skipgram is the base feature representation of the datatset
     X = get_skipgram_sentence_embedding_matrix(cleaned_tweets)
+
+    # Create bytes file for the visualization
+    X.dtype=np.float32
+    X.tofile("data/sentqs_skipgram_sentence_embedding_new.bytes")
+
     create_domain_adaptation_dataset(X, tweets, source_idx, target_idx, sentiment)
 
 
