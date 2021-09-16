@@ -71,7 +71,7 @@ Run `sentqs_demo.py` for a stream machine learning demonstration using SamKNN an
 To create a bytes file for your visualization:
   1. Run `sentqs_preprocess.py`
   2. You will receive `data/skipgram_tensors.bytes`
-  3. Change your csv file to a tsv file with a version of `csv2tsv.py`
+  3. Change your csv file to a tsv file with a version of `csv_to_tsv.py`
   4. Add both to a fork of https://github.com/tensorflow/embedding-projector-standalone
   5. Adjust the config / json file with your added files and right shape
   6. Then run the visualization local with `python -m http.server 8080`
