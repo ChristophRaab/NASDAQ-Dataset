@@ -59,9 +59,27 @@ The core idea is to learn a sentiment analysis for positive, neutral and negativ
 ### Usage
 * (Optional) Preprocess on your on:
     1. Raw tweets are at `Tweets.csv`
-    2. Run `sentqs_processing.py`
+    2. Run `sentqs_process.py`
     3. This creates a basic statistical dataset description, trains the embedding and plots tsne embedding and eigenspectra which needs some time. 
 * Store dataset ready for usage in `data/sentqs_da_skigram.npy`.
   
 * Demo 
 Run `sentqs_demo.py` for a stream machine learning demonstration using SamKNN and RSVLQ. 
+
+# Embedding Visualization
+## Skip-gram
+To create a bytes file for your visualization:
+  1. Run `sentqs_preprocess.py`
+  2. You will receive `data/skipgram_tensors.bytes`
+  3. Change your csv file to a tsv file with a version of `csv2tsv.py`
+  4. Add both to a fork of https://github.com/tensorflow/embedding-projector-standalone
+  5. Adjust the config / json file with your added files and right shape
+  6. Then run the visualization local with `python -m http.server 8080`
+
+## BERT or ALBERT
+To create a bytes file for your visualization:
+1. Run BERT with `bert/BERT.ipynb` or ALBERT with `albert/ALBERT.ipynb` local in the jupyter notebook or with Google Colab
+2. You will receive `metadata_bert.tsv` and `tensors_bert.bytes` for BERT or `metadata_albert.tsv` and `tensors_albert.bytes` for ALBERT
+3. Add both to a fork of https://github.com/tensorflow/embedding-projector-standalone
+4. Adjust the config / json file with your added files and right shape
+5. Then run the visualization local with `python -m http.server 8080` (or use GitHub Pages to deploy a WebApp with the visualization)
