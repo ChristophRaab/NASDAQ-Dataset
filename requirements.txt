@@ -34,7 +34,7 @@ Markdown==3.2.1
 MarkupSafe==1.1.1
 matplotlib==3.2.1
 mock==3.0.5
-nltk==3.4.5
+nltk==3.6.5
 numpy~=1.19.2
 pandas==1.0.3
 protobuf #==3.15.8 # changed from 3.11.4
