@@ -66,7 +66,7 @@ Theano==1.0.4
 tornado==6.0.4
 -e git+https://github.com/twintproject/twint.git@0c775346a78e779757708d740f7c9df30efdbe71#egg=twint
 urllib3 #==1.25.9
-Werkzeug==1.0.1
+Werkzeug==2.2.3
 twint
 textblob~=0.15.3
 scikit-multiflow
